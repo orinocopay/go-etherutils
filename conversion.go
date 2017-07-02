@@ -76,6 +76,14 @@ var million = big.NewInt(1000000)
 // If the 'standard' argument is true then this will display the value
 // in either (KMG)Wei or Ether only
 func WeiToString(input *big.Int, standard bool) (string, error) {
+	// Input sanity checks
+	if input.Cmp(zero) < 0 {
+		return "", errors.New("Input must be 0 or positive")
+	}
+	if input.Cmp(zero) == 0 {
+		return "0", nil
+	}
+
 	postfixPos := 0
 	modInt := new(big.Int).Set(input)
 	// Step 1: step down whole thousands for our first attempt at the unit

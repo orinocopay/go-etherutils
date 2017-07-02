@@ -173,6 +173,14 @@ func TestStringToWeiWithTooManyParts(t *testing.T) {
 	assert.NotNil(t, err, "Converted string with too many parts to Wei value")
 }
 
+func TestWeiToStringWithZero(t *testing.T) {
+	expected := "0"
+	wei := big.NewInt(0)
+	result, err := WeiToString(wei, false)
+	assert.Nil(t, err, "Failed to convert Wei to normal string")
+	assert.Equal(t, expected, result, "Did not receive expected result")
+}
+
 func TestWeiToStringWithSmallValue(t *testing.T) {
 	expected := "1 Wei"
 	wei := big.NewInt(1)

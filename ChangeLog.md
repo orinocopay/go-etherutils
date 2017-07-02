@@ -1,0 +1,2 @@
+# 1.1
+  * WeiToString() for 0-value amounts will now return "0" without units
