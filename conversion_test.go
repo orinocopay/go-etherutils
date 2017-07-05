@@ -15,6 +15,7 @@ package etherutils
 // limitations under the License.
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -727,4 +728,13 @@ func TestRoundTripWithNormalValue(t *testing.T) {
 	assert.Equal(t, second, big.NewInt(1000000000000000000), "Unexpected result converting Ether to Wei")
 	third, err := WeiToString(second, true)
 	assert.Equal(t, first, third, "Did not receive expected result")
+}
+
+func ExampleUnitToMultiplier() {
+	multiplier, err := UnitToMultiplier("ether")
+	if err != nil {
+		return
+	}
+	fmt.Println(multiplier.Text(10))
+	// Output: 1000000000000000000
 }

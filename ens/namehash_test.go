@@ -21,32 +21,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEnsNameHashEmpty(t *testing.T) {
+func TestNameHashEmpty(t *testing.T) {
 	expected := "0000000000000000000000000000000000000000000000000000000000000000"
-	actual := EnsNameHash("")
+	actual := NameHash("")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
-func TestEnsNameHashTLD(t *testing.T) {
+func TestNameHashTLD(t *testing.T) {
 	expected := "93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"
-	actual := EnsNameHash("eth")
+	actual := NameHash("eth")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
-func TestEnsNameHashFooEth(t *testing.T) {
+func TestNameHashFooEth(t *testing.T) {
 	expected := "de9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f"
-	actual := EnsNameHash("foo.eth")
+	actual := NameHash("foo.eth")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
-func TestEnsNameHashFooDotEth(t *testing.T) {
+func TestNameHashFooDotEth(t *testing.T) {
 	expected := "4143a5b2f547838d3b49982e3f2ec6a26415274e5b9c3ffeb21971bbfdfaa052"
-	actual := EnsNameHash("foo..eth")
+	actual := NameHash("foo..eth")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
-func TestEnsNameHashNickJohnsonEth(t *testing.T) {
+func TestNameHashNickJohnsonEth(t *testing.T) {
 	expected := "25cfe90ad9477590acf268bb3ad00ab18465ecce12760be3d8eac81c9f329995"
-	actual := EnsNameHash("nickjohnson.eth")
+	actual := NameHash("nickjohnson.eth")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }

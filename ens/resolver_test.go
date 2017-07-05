@@ -22,45 +22,45 @@ import (
 )
 
 func TestResolveEmpty(t *testing.T) {
-	_, err := EnsResolve("")
+	_, err := Resolve("")
 	assert.NotNil(t, err, "Resolved empty name")
 }
 
 func TestResolveNotPresent(t *testing.T) {
-	_, err := EnsResolve("sirnotappearinginthisregistry.eth")
+	_, err := Resolve("sirnotappearinginthisregistry.eth")
 	assert.NotNil(t, err, "Resolved name that does not exist")
 	assert.Equal(t, "unregistered name", err.Error(), "Unexpected error")
 }
 
 func TestResolveNoResolver(t *testing.T) {
-	_, err := EnsResolve("noresolver.eth")
+	_, err := Resolve("noresolver.eth")
 	assert.NotNil(t, err, "Resolved name without a resolver")
 	assert.Equal(t, "no resolver", err.Error(), "Unexpected error")
 }
 
 func TestResolveBadResolver(t *testing.T) {
-	_, err := EnsResolve("resolvestozero.eth")
+	_, err := Resolve("resolvestozero.eth")
 	assert.NotNil(t, err, "Resolved name with a bad resolver")
 	assert.Equal(t, "no address", err.Error(), "Unexpected error")
 }
 
 func TestResolveEnsTest(t *testing.T) {
 	expected := ""
-	actual, err := EnsResolve("enstest.eth")
+	actual, err := Resolve("enstest.eth")
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
 func TestResolveTestEnsTest(t *testing.T) {
 	expected := ""
-	actual, err := EnsResolve("test.enstest.eth")
+	actual, err := Resolve("test.enstest.eth")
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
 func TestResolveNickJohnson(t *testing.T) {
 	expected := "fdb33f8ac7ce72d7d4795dd8610e323b4c122fbb"
-	actual, err := EnsResolve("nickjohnson.eth")
+	actual, err := Resolve("nickjohnson.eth")
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }

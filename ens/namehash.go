@@ -6,8 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 )
 
-// Generate an ENS name hash for a name
-func EnsNameHash(name string) (hash [32]byte) {
+// NameHash generates a hash from a name that can be used to
+// look up the name in ENS
+func NameHash(name string) (hash [32]byte) {
 	if name != "" {
 		parts := strings.Split(name, ".")
 		for i := len(parts) - 1; i >= 0; i-- {

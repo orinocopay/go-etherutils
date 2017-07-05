@@ -1,5 +1,3 @@
-package etherutils
-
 // Copyright 2017 Orinoco Payments
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +12,9 @@ package etherutils
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package etherutils provides utilities for working with Ethereum
+package etherutils
+
 import (
 	"errors"
 	"fmt"
@@ -21,7 +22,7 @@ import (
 	"strings"
 )
 
-// Turn a string in to number of Wei.
+// StringToWei turns a string in to number of Wei.
 // The string can be a simple number of Wei, e.g. "1000000000000000" or it can
 // be a number followed by a unit, e.g. "10 ether".  Unit names are
 // case-insensitive, and can be either given names (e.g. "finney") or metric
@@ -38,7 +39,7 @@ func StringToWei(input string) (*big.Int, error) {
 		s := strings.Split(input, " ")
 
 		if len(s) != 2 {
-			return nil, errors.New(fmt.Sprintf("Unknown format of %s", input))
+			return nil, fmt.Errorf("Unknown format of %s", input)
 		}
 
 		if strings.Contains(s[0], ".") {
@@ -72,7 +73,7 @@ var zero = big.NewInt(0)
 var thousand = big.NewInt(1000)
 var million = big.NewInt(1000000)
 
-// Turn a number of Wei in to a string.
+// WeiToString turns a number of Wei in to a string.
 // If the 'standard' argument is true then this will display the value
 // in either (KMG)Wei or Ether only
 func WeiToString(input *big.Int, standard bool) (string, error) {
@@ -103,7 +104,7 @@ func WeiToString(input *big.Int, standard bool) (string, error) {
 	if len(outputValue) > 3 {
 		desiredPostfixPos += len(outputValue) / 3
 		if len(outputValue)%3 == 0 {
-			desiredPostfixPos -= 1
+			desiredPostfixPos--
 		}
 	}
 	decimalPlace := len(outputValue)
@@ -146,7 +147,7 @@ func decimalStringToWei(amount string, unit string, result *big.Int) error {
 	if parts[0] != "" {
 		err := integerStringToWei(parts[0], unit, result)
 		if err != nil {
-			return errors.New(fmt.Sprintf("Failed to parse %s %s", amount, unit))
+			return fmt.Errorf("Failed to parse %s %s", amount, unit)
 		}
 	}
 
@@ -192,13 +193,13 @@ func integerStringToWei(amount string, unit string, result *big.Int) error {
 	number := new(big.Int)
 	_, success := number.SetString(amount, 10)
 	if !success {
-		return errors.New(fmt.Sprintf("Failed to parse numeric value of %s %s", amount, unit))
+		return fmt.Errorf("Failed to parse numeric value of %s %s", amount, unit)
 	}
 
 	// Obtain multiplier
 	multiplier, err := UnitToMultiplier(unit)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Failed to parse unit of %s %s", amount, unit))
+		return fmt.Errorf("Failed to parse unit of %s %s", amount, unit)
 	}
 
 	result.Mul(number, multiplier)
@@ -211,9 +212,10 @@ var metricUnits = [...]string{"Wei", "KWei", "MWei", "GWei", "Microether", "Mill
 // Named units
 // var namedUnits = [...]string{"Wei", "Ada", "Babbage", "Shannon", "Szazbo", "Finney", "Ether", "Einstein", "Kilo", "Mega", "Giga", "Tera"}
 
-// Take an Ethereum unit and return the relevant multiplier from Wei.
-func UnitToMultiplier(unit string) (*big.Int, error) {
-	result := new(big.Int)
+// UnitToMultiplier takes the name of an Ethereum unit and returns a multiplier
+//  from Wei
+func UnitToMultiplier(unit string) (result *big.Int, err error) {
+	result = big.NewInt(0)
 	switch strings.ToLower(unit) {
 	case "", "wei":
 		result.SetString("1", 10)
@@ -238,7 +240,7 @@ func UnitToMultiplier(unit string) (*big.Int, error) {
 	case "tera", "teraether":
 		result.SetString("1000000000000000000000000000000", 10)
 	default:
-		return nil, errors.New(fmt.Sprintf("Unknown unit %s", unit))
+		err = fmt.Errorf("Unknown unit %s", unit)
 	}
-	return result, nil
+	return
 }

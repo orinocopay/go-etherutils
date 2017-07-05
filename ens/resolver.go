@@ -14,8 +14,9 @@ import (
 var zeroHash = make([]byte, 32)
 var zeroAddress = common.HexToAddress("00")
 
-func EnsResolve(name string) (addr common.Address, err error) {
-	nameHash := EnsNameHash(name)
+// Resolve resolves an ENS name in to an Etheruem address
+func Resolve(name string) (addr common.Address, err error) {
+	nameHash := NameHash(name)
 	if bytes.Compare(nameHash[:], zeroHash) == 0 {
 		err = errors.New("Bad name")
 	} else {
