@@ -18,42 +18,45 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 )
 
+var client, err = ethclient.Dial("https://api.orinocopay.com:8546/")
+
 func TestResolveEmpty(t *testing.T) {
-	_, err := Resolve("")
+	_, err := Resolve(client, "")
 	assert.NotNil(t, err, "Resolved empty name")
 }
 
 func TestResolveNotPresent(t *testing.T) {
-	_, err := Resolve("sirnotappearinginthisregistry.eth")
+	_, err := Resolve(client, "sirnotappearinginthisregistry.eth")
 	assert.NotNil(t, err, "Resolved name that does not exist")
 	assert.Equal(t, "unregistered name", err.Error(), "Unexpected error")
 }
 
 func TestResolveNoResolver(t *testing.T) {
-	_, err := Resolve("noresolver.eth")
+	_, err := Resolve(client, "noresolver.eth")
 	assert.NotNil(t, err, "Resolved name without a resolver")
 	assert.Equal(t, "no resolver", err.Error(), "Unexpected error")
 }
 
 func TestResolveBadResolver(t *testing.T) {
-	_, err := Resolve("resolvestozero.eth")
+	_, err := Resolve(client, "resolvestozero.eth")
 	assert.NotNil(t, err, "Resolved name with a bad resolver")
 	assert.Equal(t, "no address", err.Error(), "Unexpected error")
 }
 
 func TestResolveTestEnsTest(t *testing.T) {
 	expected := "a34c6bcae6f46ac6470443ccea67d937f6060c7e"
-	actual, err := Resolve("test.enstest.eth")
+	actual, err := Resolve(client, "test.enstest.eth")
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
 func TestResolveNickJohnson(t *testing.T) {
 	expected := "fdb33f8ac7ce72d7d4795dd8610e323b4c122fbb"
-	actual, err := Resolve("nickjohnson.eth")
+	actual, err := Resolve(client, "nickjohnson.eth")
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }

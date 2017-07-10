@@ -15,25 +15,19 @@ var zeroHash = make([]byte, 32)
 var zeroAddress = common.HexToAddress("00")
 
 // Resolve resolves an ENS name in to an Etheruem address
-func Resolve(name string) (addr common.Address, err error) {
+func Resolve(client *ethclient.Client, name string) (addr common.Address, err error) {
 	nameHash := NameHash(name)
 	if bytes.Compare(nameHash[:], zeroHash) == 0 {
 		err = errors.New("Bad name")
 	} else {
-		addr, err = resolveHash(nameHash)
+		addr, err = resolveHash(client, nameHash)
 	}
 	return
 }
 
-func resolveHash(nameHash [32]byte) (address common.Address, err error) {
-	// Create an IPC based RPC connection to a remote node
-	conn, err := ethclient.Dial("http://api.orinocopay.com:8545/")
-	if err != nil {
-		return zeroAddress, err
-	}
-
+func resolveHash(client *ethclient.Client, nameHash [32]byte) (address common.Address, err error) {
 	// Instantiate the ENS contract
-	ens, err := enscontract.NewEnscontract(common.HexToAddress("314159265dd8dbb310642f98f50c066173c1259b"), conn)
+	ens, err := enscontract.NewEnscontract(common.HexToAddress("314159265dd8dbb310642f98f50c066173c1259b"), client)
 	if err != nil {
 		return zeroAddress, err
 	}
@@ -57,7 +51,7 @@ func resolveHash(nameHash [32]byte) (address common.Address, err error) {
 	}
 
 	// Instantiate the resolver contract
-	resolver, err := resolvercontract.NewResolvercontract(resolverAddress, conn)
+	resolver, err := resolvercontract.NewResolvercontract(resolverAddress, client)
 	if err != nil {
 		return zeroAddress, err
 	}
