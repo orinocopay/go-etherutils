@@ -44,15 +44,8 @@ func TestResolveBadResolver(t *testing.T) {
 	assert.Equal(t, "no address", err.Error(), "Unexpected error")
 }
 
-func TestResolveEnsTest(t *testing.T) {
-	expected := ""
-	actual, err := Resolve("enstest.eth")
-	assert.Nil(t, err, "Error resolving name")
-	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
-}
-
 func TestResolveTestEnsTest(t *testing.T) {
-	expected := ""
+	expected := "a34c6bcae6f46ac6470443ccea67d937f6060c7e"
 	actual, err := Resolve("test.enstest.eth")
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
