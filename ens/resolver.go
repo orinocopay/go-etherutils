@@ -2,62 +2,69 @@ package ens
 
 import (
 	"bytes"
+	"context"
 	"errors"
+	"math/big"
+	"strings"
+	"time"
 
+	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-
-	"github.com/orinocopay/go-etherutils/ens/enscontract"
+	"github.com/ethereum/go-ethereum/params"
+	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/resolvercontract"
 )
 
 var zeroHash = make([]byte, 32)
 var zeroAddress = common.HexToAddress("00")
 
-// Resolve resolves an ENS name in to an Etheruem address
-func Resolve(client *ethclient.Client, name string) (addr common.Address, err error) {
-	nameHash := NameHash(name)
-	if bytes.Compare(nameHash[:], zeroHash) == 0 {
-		err = errors.New("Bad name")
+// PublicResolver obtains the public resolver for a chain
+func PublicResolver(chainID *big.Int, client *ethclient.Client) (address common.Address, err error) {
+	// Instantiate the registry contract
+	if chainID.Cmp(params.MainnetChainConfig.ChainId) == 0 {
+		address = common.HexToAddress("5FfC014343cd971B7eb70732021E26C35B744cc4")
+	} else if chainID.Cmp(params.TestnetChainConfig.ChainId) == 0 {
+		address = common.HexToAddress("4c641fb9bad9b60ef180c31f56051ce826d21a9a")
+		// TODO does Rinkeby have a public resolver?
+		//	} else if chainID.Cmp(params.RinkebyChainConfig.ChainId) == 0 {
+		//		address = common.HexToAddress("")
 	} else {
-		addr, err = resolveHash(client, nameHash)
+		err = errors.New("Unknown network ID")
 	}
 	return
 }
 
-func resolveHash(client *ethclient.Client, nameHash [32]byte) (address common.Address, err error) {
-	// Instantiate the ENS contract
-	ens, err := enscontract.NewEnscontract(common.HexToAddress("314159265dd8dbb310642f98f50c066173c1259b"), client)
-	if err != nil {
-		return zeroAddress, err
+// Resolve resolves an ENS name in to an Etheruem address
+// This will return an error if the name is not found or otherwise 0
+func Resolve(client *ethclient.Client, input string) (address common.Address, err error) {
+	if strings.HasSuffix(input, ".eth") {
+		nameHash := NameHash(input)
+		if bytes.Compare(nameHash[:], zeroHash) == 0 {
+			err = errors.New("Bad name")
+		} else {
+			address, err = resolveHash(client, input)
+		}
+	} else {
+		address = common.HexToAddress(input)
+		if address == zeroAddress {
+			err = errors.New("could not parse address")
+		}
 	}
 
-	// Check that this name is owned
-	ownerAddress, err := ens.Owner(nil, nameHash)
-	if err != nil {
-		return zeroAddress, err
-	}
-	if bytes.Compare(ownerAddress.Bytes(), zeroAddress.Bytes()) == 0 {
-		return zeroAddress, errors.New("unregistered name")
-	}
+	return
+}
 
-	// Obtain the resolver for this name
-	resolverAddress, err := ens.Resolver(nil, nameHash)
-	if err != nil {
-		return zeroAddress, err
-	}
-	if bytes.Compare(resolverAddress.Bytes(), zeroAddress.Bytes()) == 0 {
-		return zeroAddress, errors.New("no resolver")
-	}
-
-	// Instantiate the resolver contract
-	resolver, err := resolvercontract.NewResolvercontract(resolverAddress, client)
+func resolveHash(client *ethclient.Client, name string) (address common.Address, err error) {
+	contract, err := ResolverContract(client, name)
 	if err != nil {
 		return zeroAddress, err
 	}
 
 	// Resolve the name
-	address, err = resolver.Addr(nil, nameHash)
+	address, err = contract.Addr(nil, NameHash(name))
 	if err != nil {
 		return zeroAddress, err
 	}
@@ -66,4 +73,80 @@ func resolveHash(client *ethclient.Client, nameHash [32]byte) (address common.Ad
 	}
 
 	return
+}
+
+// CreateResolverSession creates a session suitable for multiple calls
+// TODO how to handle changes in gas limit?
+func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *resolvercontract.Resolvercontract, gasLimit *big.Int, gasPrice *big.Int) *resolvercontract.ResolvercontractSession {
+	// Create a signer
+	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
+
+	// Return our session
+	session := &resolvercontract.ResolvercontractSession{
+		Contract: contract,
+		CallOpts: bind.CallOpts{
+			Pending: true,
+		},
+		TransactOpts: bind.TransactOpts{
+			From:     account.Address,
+			Signer:   signer,
+			GasPrice: gasPrice,
+			GasLimit: gasLimit,
+		},
+	}
+
+	return session
+}
+
+func SetResolution(session *resolvercontract.ResolvercontractSession, name string, resolutionAddress *common.Address) (tx *types.Transaction, err error) {
+	nameHash := NameHash(name)
+	tx, err = session.SetAddr(nameHash, *resolutionAddress)
+	return
+}
+
+func ResolverContractByAddress(client *ethclient.Client, resolverAddress common.Address) (resolver *resolvercontract.Resolvercontract, err error) {
+	// Instantiate the resolver contract
+	resolver, err = resolvercontract.NewResolvercontract(resolverAddress, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+// ResolverContract obtains the resolver contract for a name
+func ResolverContract(client *ethclient.Client, name string) (resolver *resolvercontract.Resolvercontract, err error) {
+	nameHash := NameHash(name)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	chainID, err := client.NetworkID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	registryContract, err := RegistryContract(chainID, client)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check that this name is owned
+	ownerAddress, err := registryContract.Owner(nil, nameHash)
+	if err != nil {
+		return nil, err
+	}
+	if bytes.Compare(ownerAddress.Bytes(), zeroAddress.Bytes()) == 0 {
+		return nil, errors.New("unregistered name")
+	}
+
+	// Obtain the resolver for this name
+	resolverAddress, err := registryContract.Resolver(nil, nameHash)
+	if err != nil {
+		return nil, err
+	}
+	if bytes.Compare(resolverAddress.Bytes(), zeroAddress.Bytes()) == 0 {
+		return nil, errors.New("no resolver")
+	}
+
+	return ResolverContractByAddress(client, resolverAddress)
 }
