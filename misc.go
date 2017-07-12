@@ -8,7 +8,7 @@ import (
 )
 
 // NetworkID returns the network ID (also known as the chain ID) for this chain.
-func NetworkID(c *rpc.Client, ctx context.Context) (*big.Int, error) {
+func NetworkID(ctx context.Context, c *rpc.Client) (*big.Int, error) {
 	version := big.NewInt(0)
 
 	var ver string

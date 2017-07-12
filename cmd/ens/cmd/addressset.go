@@ -46,7 +46,7 @@ In quiet mode this will return 0 if the transaction to set the address is sent s
 		cli.ErrAssert(inState, err, quiet, "Failed to obtain registrar contract")
 
 		// Obtain the registry contract
-		registryContract, err := ens.RegistryContract(chainID, client)
+		registryContract, err := ens.RegistryContract(client, rpcclient)
 		cli.ErrCheck(err, quiet, "Failed to obtain registry contract")
 
 		// Fetch the owner of the name
@@ -69,7 +69,7 @@ In quiet mode this will return 0 if the transaction to set the address is sent s
 		cli.ErrCheck(err, quiet, "No resolver for that name")
 
 		// Obtain the address to which we resolve
-		resolutionAddress, err := ens.Resolve(client, addressAddressStr)
+		resolutionAddress, err := ens.Resolve(client, addressAddressStr, rpcclient)
 		cli.ErrCheck(err, quiet, "Invalid address")
 
 		// Set the address to which we resolve

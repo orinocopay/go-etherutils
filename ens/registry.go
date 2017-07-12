@@ -16,8 +16,10 @@ package ens
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -25,12 +27,21 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/registrycontract"
 )
 
 // RegistryContract obtains the registry contract for a chain
-func RegistryContract(chainID *big.Int, client *ethclient.Client) (registry *registrycontract.Registrycontract, err error) {
+func RegistryContract(client *ethclient.Client, rpcclient *rpc.Client) (registry *registrycontract.Registrycontract, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	//chainID, err := client.NetworkID(ctx)
+	chainID, err := etherutils.NetworkID(ctx, rpcclient)
+	if err != nil {
+		return nil, err
+	}
+
 	// Instantiate the registry contract
 	if chainID.Cmp(params.MainnetChainConfig.ChainId) == 0 {
 		registry, err = registrycontract.NewRegistrycontract(common.HexToAddress("314159265dd8dbb310642f98f50c066173c1259b"), client)

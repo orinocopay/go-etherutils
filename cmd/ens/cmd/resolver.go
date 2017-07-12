@@ -37,7 +37,7 @@ In quiet mode this will return 0 if the name has a resolver, otherwise 1.`,
 		inState, err := ens.NameInState(registrarContract, args[0], 2)
 		cli.ErrAssert(inState, err, quiet, "Cannot obtain resolver")
 
-		registryContract, err := ens.RegistryContract(chainID, client)
+		registryContract, err := ens.RegistryContract(client, rpcclient)
 		cli.ErrCheck(err, quiet, "Failed to obtain registry contract")
 		resolver, err := ens.Resolver(registryContract, args[0])
 		cli.ErrCheck(err, quiet, "No resolver for that name")

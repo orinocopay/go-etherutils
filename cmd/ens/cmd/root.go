@@ -22,7 +22,9 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	homedir "github.com/mitchellh/go-homedir"
+	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,6 +34,7 @@ var cfgFile string
 var quiet bool
 var connection string
 
+var rpcclient *rpc.Client
 var client *ethclient.Client
 var chainID *big.Int
 
@@ -64,12 +67,21 @@ func persistentPreRun(cmd *cobra.Command, args []string) {
 
 	// Create a connection to an Ethereum node
 	var err error
-	client, err = ethclient.Dial(connection)
+	rpcclient, err = rpc.Dial(connection)
+	cli.ErrCheck(err, quiet, "Failed to connect to Ethereum")
+	client = ethclient.NewClient(rpcclient)
+	//client, err = ethclient.Dial(connection)
 	cli.ErrCheck(err, quiet, "Failed to connect to Ethereum")
 	// Fetch the chain ID
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	chainID, err = client.NetworkID(ctx)
+	//
+	// Replace when NetworkID makes it in to ethclient
+	//
+	c, err := rpc.Dial(connection)
+	cli.ErrCheck(err, quiet, "Failed to connect to Ethereum")
+	chainID, err = etherutils.NetworkID(ctx, c)
+	//chainID, err = client.NetworkID(ctx)
 	cli.ErrCheck(err, quiet, "Failed to obtain chain ID")
 }
 
