@@ -37,14 +37,9 @@ var chainID *big.Int
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "cmd",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:              "ens",
+	Short:            "manage ENS entries",
+	Long:             `Manage entries for the Ethereum Name Service (ENS).  Details of each indiidual command are available in the help files for the relevant command`,
 	PersistentPreRun: persistentPreRun,
 }
 
@@ -56,10 +51,10 @@ func persistentPreRun(cmd *cobra.Command, args []string) {
 
 	// Ensure that the first argument is present
 	if len(args) == 0 {
-		cli.Err(quiet, "Thie command requires a name")
+		cli.Err(quiet, "This command requires a name")
 	}
 	if args[0] == "" {
-		cli.Err(quiet, "Thie command requires a name")
+		cli.Err(quiet, "This command requires a name")
 	}
 
 	// Add '.eth' to the end of the name if not present
