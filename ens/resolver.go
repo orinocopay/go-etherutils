@@ -33,7 +33,7 @@ import (
 )
 
 var zeroHash = make([]byte, 32)
-var zeroAddress = common.HexToAddress("00")
+var UnknownAddress = common.HexToAddress("00")
 
 // PublicResolver obtains the public resolver for a chain
 func PublicResolver(chainID *big.Int, client *ethclient.Client) (address common.Address, err error) {
@@ -63,7 +63,7 @@ func Resolve(client *ethclient.Client, input string) (address common.Address, er
 		}
 	} else {
 		address = common.HexToAddress(input)
-		if address == zeroAddress {
+		if address == UnknownAddress {
 			err = errors.New("could not parse address")
 		}
 	}
@@ -74,16 +74,16 @@ func Resolve(client *ethclient.Client, input string) (address common.Address, er
 func resolveHash(client *ethclient.Client, name string) (address common.Address, err error) {
 	contract, err := ResolverContract(client, name)
 	if err != nil {
-		return zeroAddress, err
+		return UnknownAddress, err
 	}
 
 	// Resolve the name
 	address, err = contract.Addr(nil, NameHash(name))
 	if err != nil {
-		return zeroAddress, err
+		return UnknownAddress, err
 	}
-	if bytes.Compare(address.Bytes(), zeroAddress.Bytes()) == 0 {
-		return zeroAddress, errors.New("no address")
+	if bytes.Compare(address.Bytes(), UnknownAddress.Bytes()) == 0 {
+		return UnknownAddress, errors.New("no address")
 	}
 
 	return
@@ -151,7 +151,7 @@ func ResolverContract(client *ethclient.Client, name string) (resolver *resolver
 	if err != nil {
 		return nil, err
 	}
-	if bytes.Compare(ownerAddress.Bytes(), zeroAddress.Bytes()) == 0 {
+	if bytes.Compare(ownerAddress.Bytes(), UnknownAddress.Bytes()) == 0 {
 		return nil, errors.New("unregistered name")
 	}
 
@@ -160,7 +160,7 @@ func ResolverContract(client *ethclient.Client, name string) (resolver *resolver
 	if err != nil {
 		return nil, err
 	}
-	if bytes.Compare(resolverAddress.Bytes(), zeroAddress.Bytes()) == 0 {
+	if bytes.Compare(resolverAddress.Bytes(), UnknownAddress.Bytes()) == 0 {
 		return nil, errors.New("no resolver")
 	}
 

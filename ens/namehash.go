@@ -20,6 +20,16 @@ import (
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 )
 
+// LabelHash generates a simple hash for a piece of a name.
+func LabelHash(label string) (hash [32]byte) {
+	if label != "" {
+		sha := sha3.NewKeccak256()
+		sha.Write([]byte(label))
+		sha.Sum(hash[:0])
+	}
+	return
+}
+
 // NameHash generates a hash from a name that can be used to
 // look up the name in ENS
 func NameHash(name string) (hash [32]byte) {

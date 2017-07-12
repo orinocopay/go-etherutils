@@ -16,18 +16,27 @@ package cli
 
 import (
 	"errors"
+	"math/big"
 	"path/filepath"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/node"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 // ObtainWallet fetches the wallet for a given address
-func ObtainWallet(address common.Address) (accounts.Wallet, error) {
-	// FIXME hard-coded name
-	keydir := filepath.Join(node.DefaultDataDir(), "testnet", "keystore")
+func ObtainWallet(chainID *big.Int, address common.Address) (accounts.Wallet, error) {
+	keydir := node.DefaultDataDir()
+	if chainID.Cmp(params.MainnetChainConfig.ChainId) == 0 {
+		// Nothing to add for mainnet
+	} else if chainID.Cmp(params.TestnetChainConfig.ChainId) == 0 {
+		keydir = filepath.Join(keydir, "testnet")
+	} else if chainID.Cmp(params.RinkebyChainConfig.ChainId) == 0 {
+		keydir = filepath.Join(keydir, "rinkeby")
+	}
+	keydir = filepath.Join(keydir, "keystore")
 	backends := []accounts.Backend{keystore.NewKeyStore(keydir, keystore.StandardScryptN, keystore.StandardScryptP)}
 	accountManager := accounts.NewManager(backends...)
 	defer accountManager.Close()

@@ -47,7 +47,7 @@ func RegistryContract(chainID *big.Int, client *ethclient.Client) (registry *reg
 // Resolver obtains the address of the resolver for a .eth name
 func Resolver(contract *registrycontract.Registrycontract, name string) (address common.Address, err error) {
 	address, err = contract.Resolver(nil, NameHash(name))
-	if err == nil && bytes.Compare(address.Bytes(), zeroAddress.Bytes()) == 0 {
+	if err == nil && bytes.Compare(address.Bytes(), UnknownAddress.Bytes()) == 0 {
 		err = errors.New("no resolver")
 	}
 	return

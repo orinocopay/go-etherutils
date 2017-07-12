@@ -50,3 +50,9 @@ func TestNameHashNickJohnsonEth(t *testing.T) {
 	actual := NameHash("nickjohnson.eth")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
+
+func TestLabelHashFoo(t *testing.T) {
+	expected := "41b1a0649752af1b28b3dc29a1556eee781e4a4c3a1f7f53f90fa834de098c4d"
+	actual := LabelHash("foo")
+	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
+}

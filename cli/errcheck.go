@@ -29,6 +29,18 @@ func ErrCheck(err error, quiet bool, msg string) {
 	}
 }
 
+// ErrAssert checks a condition and quits if it is false
+func ErrAssert(condition bool, err error, quiet bool, msg string) {
+	if !condition {
+		if err != nil {
+			if !quiet {
+				fmt.Fprintf(os.Stderr, "%s: %s\n", msg, err.Error())
+			}
+			os.Exit(1)
+		}
+	}
+}
+
 // Assert checks a condition and quits if it is false
 func Assert(condition bool, quiet bool, msg string) {
 	if !condition {
