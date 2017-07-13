@@ -72,8 +72,15 @@ func SetResolver(session *registrycontract.RegistrycontractSession, name string,
 	return
 }
 
+// SetSubdomainOwner sets the owner for a subdomain of a name
+func SetSubdomainOwner(session *registrycontract.RegistrycontractSession, name string, subdomain string, ownerAddr *common.Address) (tx *types.Transaction, err error) {
+	nameHash := NameHash(name)
+	subdomainHash := LabelHash(subdomain)
+	tx, err = session.SetSubnodeOwner(nameHash, subdomainHash, *ownerAddr)
+	return
+}
+
 // CreateRegistrySession creates a session suitable for multiple calls
-// TODO how to handle changes in gas limit?
 func CreateRegistrySession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrycontract.Registrycontract, gasLimit *big.Int, gasPrice *big.Int) *registrycontract.RegistrycontractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)

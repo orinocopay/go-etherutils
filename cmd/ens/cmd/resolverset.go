@@ -1,4 +1,4 @@
-// Copyright © 2017 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2017 Orinoco Payments
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -43,9 +43,9 @@ The keystore for the account that owns the name must be local (i.e. listed with 
 In quiet mode this will return 0 if the transaction to set the resolver is sent successfully, otherwise 1.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Ensure that the name is in a suitable state
-		registrarContract, err := ens.RegistrarContract(chainID, client)
-		inState, err := ens.NameInState(registrarContract, args[0], 2)
-		cli.ErrAssert(inState, err, quiet, "Cannot obtain resolver")
+		registrarContract, err := ens.RegistrarContract(client, rpcclient)
+		inState, err := ens.NameInState(registrarContract, args[0], "Owned")
+		cli.ErrAssert(inState, err, quiet, "Name not in asuitable staet to set a resolver")
 
 		// Obtain the registry contract
 		registryContract, err := ens.RegistryContract(client, rpcclient)
@@ -81,7 +81,7 @@ In quiet mode this will return 0 if the transaction to set the resolver is sent 
 		tx, err := ens.SetResolver(session, args[0], &resolverAddress)
 		cli.ErrCheck(err, quiet, "Failed to send transaction")
 		if !quiet {
-			fmt.Println("Transacton hash is", tx.Hash().Hex())
+			fmt.Println("Transaction ID is", tx.Hash().Hex())
 		}
 	},
 }

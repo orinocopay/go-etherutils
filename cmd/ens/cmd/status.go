@@ -15,38 +15,40 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/orinocopay/go-etherutils/cli"
 	"github.com/orinocopay/go-etherutils/ens"
 	"github.com/spf13/cobra"
 )
 
-// resolverCmd represents the resolver command
-var resolverCmd = &cobra.Command{
-	Use:   "resolver",
-	Short: "Obtain the resolver of an ENS name",
-	Long: `Obtain the resolver of a name registered with the Ethereum Name Service (ENS).  For example:
+// statusCmd represents the status command
+var statusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Obtain the status of an ENS name",
+	Long: `Obtain the status of a name registered with the Ethereum Name Service (ENS).  For example:
 
-    ens resolver enstest.eth
+    ens status enstest.eth
 
-In quiet mode this will return 0 if the name has a resolver, otherwise 1.`,
+In quiet mode this will return 0 if the status is owned, otherwise 1.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-
 		registrarContract, err := ens.RegistrarContract(client, rpcclient)
-		inState, err := ens.NameInState(registrarContract, args[0], "Owned")
-		cli.ErrAssert(inState, err, quiet, "Name not in a suitable state to obtain the resolver")
-
-		registryContract, err := ens.RegistryContract(client, rpcclient)
-		cli.ErrCheck(err, quiet, "Failed to obtain registry contract")
-		resolver, err := ens.Resolver(registryContract, args[0])
-		cli.ErrCheck(err, quiet, "No resolver for that name")
-		if !quiet {
-			fmt.Println(resolver.Hex())
+		state, err := ens.State(registrarContract, args[0])
+		cli.ErrCheck(err, quiet, "Cannot obtain status")
+		if quiet {
+			if state == "Owned" {
+				os.Exit(0)
+			} else {
+				os.Exit(1)
+			}
+		} else {
+			fmt.Println(state)
 		}
+
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(resolverCmd)
+	RootCmd.AddCommand(statusCmd)
 }

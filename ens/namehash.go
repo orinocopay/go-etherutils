@@ -15,6 +15,7 @@
 package ens
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto/sha3"
@@ -39,6 +40,18 @@ func NameHash(name string) (hash [32]byte) {
 			hash = nameHashPart(hash, parts[i])
 		}
 	}
+	return
+}
+
+// Domain returns the domain directly before the '.eth' in a name
+func Domain(name string) (domain string, err error) {
+	nameBits := strings.Split(name, ".")
+	if len(nameBits) < 2 {
+		err = errors.New("invalid name")
+		return
+	}
+
+	domain = nameBits[len(nameBits)-2]
 	return
 }
 

@@ -89,7 +89,6 @@ func resolveHash(client *ethclient.Client, name string, rpcclient *rpc.Client) (
 }
 
 // CreateResolverSession creates a session suitable for multiple calls
-// TODO how to handle changes in gas limit?
 func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *resolvercontract.Resolvercontract, gasLimit *big.Int, gasPrice *big.Int) *resolvercontract.ResolvercontractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
