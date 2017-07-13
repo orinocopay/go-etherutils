@@ -32,6 +32,8 @@ import (
 )
 
 var zeroHash = make([]byte, 32)
+
+// UnknownAddress is the address to which unknown entries resolve
 var UnknownAddress = common.HexToAddress("00")
 
 // PublicResolver obtains the public resolver for a chain
