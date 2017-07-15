@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -57,7 +58,11 @@ func RegistryContract(client *ethclient.Client, rpcclient *rpc.Client) (registry
 
 // Resolver obtains the address of the resolver for a .eth name
 func Resolver(contract *registrycontract.Registrycontract, name string) (address common.Address, err error) {
-	address, err = contract.Resolver(nil, NameHash(name))
+	nameHash, err := NameHash(name)
+	if err != nil {
+		return
+	}
+	address, err = contract.Resolver(nil, nameHash)
 	if err == nil && bytes.Compare(address.Bytes(), UnknownAddress.Bytes()) == 0 {
 		err = errors.New("no resolver")
 	}
@@ -66,16 +71,26 @@ func Resolver(contract *registrycontract.Registrycontract, name string) (address
 
 // SetResolver sets the resolver for a name
 func SetResolver(session *registrycontract.RegistrycontractSession, name string, resolverAddr *common.Address) (tx *types.Transaction, err error) {
+	fmt.Println("SetResolver: resolver address is", resolverAddr)
 	// Set the resolver for this name
-	nameHash := NameHash(name)
+	nameHash, err := NameHash(name)
+	if err != nil {
+		return
+	}
 	tx, err = session.SetResolver(nameHash, *resolverAddr)
 	return
 }
 
 // SetSubdomainOwner sets the owner for a subdomain of a name
 func SetSubdomainOwner(session *registrycontract.RegistrycontractSession, name string, subdomain string, ownerAddr *common.Address) (tx *types.Transaction, err error) {
-	nameHash := NameHash(name)
-	subdomainHash := LabelHash(subdomain)
+	nameHash, err := NameHash(name)
+	if err != nil {
+		return
+	}
+	subdomainHash, err := LabelHash(subdomain)
+	if err != nil {
+		return
+	}
 	tx, err = session.SetSubnodeOwner(nameHash, subdomainHash, *ownerAddr)
 	return
 }

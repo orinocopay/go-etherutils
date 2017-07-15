@@ -18,34 +18,58 @@ import (
 	"errors"
 	"strings"
 
+	"golang.org/x/net/idna"
+
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 )
 
+var p = idna.New(idna.MapForLookup(), idna.StrictDomainName(true), idna.Transitional(false))
+
+func normalize(input string) (output string, err error) {
+	output, err = p.ToUnicode(input)
+	return
+}
+
 // LabelHash generates a simple hash for a piece of a name.
-func LabelHash(label string) (hash [32]byte) {
-	if label != "" {
-		sha := sha3.NewKeccak256()
-		sha.Write([]byte(label))
-		sha.Sum(hash[:0])
+func LabelHash(label string) (hash [32]byte, err error) {
+	if label == "" {
+		return
 	}
+	normalizedLabel, err := normalize(label)
+	if err != nil {
+		return
+	}
+
+	sha := sha3.NewKeccak256()
+	sha.Write([]byte(normalizedLabel))
+	sha.Sum(hash[:0])
 	return
 }
 
 // NameHash generates a hash from a name that can be used to
 // look up the name in ENS
-func NameHash(name string) (hash [32]byte) {
-	if name != "" {
-		parts := strings.Split(name, ".")
-		for i := len(parts) - 1; i >= 0; i-- {
-			hash = nameHashPart(hash, parts[i])
-		}
+func NameHash(name string) (hash [32]byte, err error) {
+	if name == "" {
+		return
+	}
+	normalizedName, err := normalize(name)
+	if err != nil {
+		return
+	}
+	parts := strings.Split(normalizedName, ".")
+	for i := len(parts) - 1; i >= 0; i-- {
+		hash = nameHashPart(hash, parts[i])
 	}
 	return
 }
 
 // Domain returns the domain directly before the '.eth' in a name
 func Domain(name string) (domain string, err error) {
-	nameBits := strings.Split(name, ".")
+	normalizedName, err := normalize(name)
+	if err != nil {
+		return
+	}
+	nameBits := strings.Split(normalizedName, ".")
 	if len(nameBits) < 2 {
 		err = errors.New("invalid name")
 		return

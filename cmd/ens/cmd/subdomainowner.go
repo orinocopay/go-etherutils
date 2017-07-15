@@ -59,12 +59,13 @@ In quiet mode this will return 0 if the transaction to set the owner of the subd
 		registryContract, err := ens.RegistryContract(client, rpcclient)
 		cli.ErrCheck(err, quiet, "Failed to obtain registry contract")
 
-		// Fetch the owner of the name
-		owner, err := registryContract.Owner(nil, ens.NameHash(domain))
+		// Fetch the owner of the domain
+		nameHash, err := ens.NameHash(domain)
+		cli.ErrCheck(err, quiet, "Invalid name")
+		owner, err := registryContract.Owner(nil, nameHash)
 		cli.ErrCheck(err, quiet, "Cannot obtain owner")
 		cli.Assert(bytes.Compare(owner.Bytes(), ens.UnknownAddress.Bytes()) != 0, quiet, "Owner is not set")
 
-		fmt.Println("Owner is", owner.Hex())
 		// Fetch the wallet and account for the owner
 		wallet, err := cli.ObtainWallet(chainID, owner)
 		cli.ErrCheck(err, quiet, "Failed to obtain a wallet for the owner")

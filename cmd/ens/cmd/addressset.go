@@ -50,7 +50,9 @@ In quiet mode this will return 0 if the transaction to set the address is sent s
 		cli.ErrCheck(err, quiet, "Failed to obtain registry contract")
 
 		// Fetch the owner of the name
-		owner, err := registryContract.Owner(nil, ens.NameHash(args[0]))
+		nameHash, err := ens.NameHash(args[0])
+		cli.ErrCheck(err, quiet, "Invalid name")
+		owner, err := registryContract.Owner(nil, nameHash)
 		cli.ErrCheck(err, quiet, "Cannot obtain owner")
 		cli.Assert(bytes.Compare(owner.Bytes(), ens.UnknownAddress.Bytes()) != 0, quiet, "Owner is not set")
 

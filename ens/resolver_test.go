@@ -26,6 +26,11 @@ func TestResolveEmpty(t *testing.T) {
 	assert.NotNil(t, err, "Resolved empty name")
 }
 
+func TestResolveZero(t *testing.T) {
+	_, err := Resolve(client, "0", rpcclient)
+	assert.NotNil(t, err, "Resolved empty name")
+}
+
 func TestResolveNotPresent(t *testing.T) {
 	_, err := Resolve(client, "sirnotappearinginthisregistry.eth", rpcclient)
 	assert.NotNil(t, err, "Resolved name that does not exist")
@@ -45,14 +50,14 @@ func TestResolveBadResolver(t *testing.T) {
 }
 
 func TestResolveTestEnsTest(t *testing.T) {
-	expected := "a34c6bcae6f46ac6470443ccea67d937f6060c7e"
+	expected := "cd83f15ae0df92696d841e656daf3b41704322cb"
 	actual, err := Resolve(client, "test.enstest.eth", rpcclient)
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
 func TestResolveNickJohnson(t *testing.T) {
-	expected := "fdb33f8ac7ce72d7d4795dd8610e323b4c122fbb"
+	expected := "70abd981e01ad3e6eb1726a5001000877ab04417"
 	actual, err := Resolve(client, "nickjohnson.eth", rpcclient)
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")

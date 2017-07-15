@@ -14,6 +14,7 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 
@@ -42,8 +43,17 @@ In quiet mode this will return 0 if the transaction to finish the auction is sen
 
 		// Ensure that the name is in a suitable state
 		registrarContract, err := ens.RegistrarContract(client, rpcclient)
-		inState, err := ens.NameInState(registrarContract, args[0], "Revealing")
+		inState, err := ens.NameInState(registrarContract, args[0], "Owned")
 		cli.ErrAssert(inState, err, quiet, "Name not in a suitable state for bid to be revealed")
+		// Obtain the registry contract
+		registryContract, err := ens.RegistryContract(client, rpcclient)
+		cli.ErrCheck(err, quiet, "Failed to obtain registry contract")
+		// Fetch the owner of the name - must be 0 if this auction has not been finalised
+		nameHash, err := ens.NameHash(args[0])
+		cli.ErrCheck(err, quiet, "Invalid name")
+		owner, err := registryContract.Owner(nil, nameHash)
+		cli.ErrCheck(err, quiet, "Cannot obtain owner")
+		cli.Assert(bytes.Compare(owner.Bytes(), ens.UnknownAddress.Bytes()) == 0, quiet, "Auction already finished")
 
 		// Fetch the wallet and account for the address
 		auctionFinishAddress, err := ens.Resolve(client, auctionFinishAddressStr, rpcclient)

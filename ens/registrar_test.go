@@ -33,11 +33,14 @@ func TestSealBid1(t *testing.T) {
 
 	address, err := Resolve(client, "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1", rpcclient)
 	assert.Nil(t, err, "Failed to obtain address")
-	nameHash := LabelHash("foo")
+	nameHash, err := LabelHash("foo")
+	assert.Nil(t, err, "Failed to hash")
 	amount, err := etherutils.StringToWei("0.01 Ether")
 	assert.Nil(t, err, "Failed to obtain amount")
 	salt := "foo"
-	sealedBid1, err := contract.ShaBid(nil, nameHash, address, amount, LabelHash(salt))
+	saltHash, err := LabelHash(salt)
+	assert.Nil(t, err, "Failed to hash")
+	sealedBid1, err := contract.ShaBid(nil, nameHash, address, amount, saltHash)
 	assert.Nil(t, err, "Failed to seal bid (1)")
 
 	sealedBid2, err := SealBid("foo.eth", &address, *amount, salt)

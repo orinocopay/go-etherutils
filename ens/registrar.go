@@ -84,7 +84,10 @@ func SealBid(name string, owner *common.Address, amount big.Int, salt string) (h
 		err = errors.New("invalid name")
 		return
 	}
-	domainHash := LabelHash(domain)
+	domainHash, err := LabelHash(domain)
+	if err != nil {
+		return
+	}
 
 	sha := sha3.NewKeccak256()
 	sha.Write(domainHash[:])
@@ -93,7 +96,10 @@ func SealBid(name string, owner *common.Address, amount big.Int, salt string) (h
 	var amountBytes [32]byte
 	copy(amountBytes[len(amountBytes)-len(amount.Bytes()):], amount.Bytes()[:])
 	sha.Write(amountBytes[:])
-	saltHash := LabelHash(salt)
+	saltHash, err := LabelHash(salt)
+	if err != nil {
+		return
+	}
 	sha.Write(saltHash[:])
 	sha.Sum(hash[:0])
 	return
@@ -114,7 +120,11 @@ func StartAuctionAndBid(session *registrarcontract.RegistrarcontractSession, nam
 
 	var domainHashes [][32]byte
 	domainHashes = make([][32]byte, 0, 1)
-	domainHashes = append(domainHashes, LabelHash(domain))
+	domainHash, err := LabelHash(domain)
+	if err != nil {
+		return
+	}
+	domainHashes = append(domainHashes, domainHash)
 	tx, err = session.StartAuctionsAndBid(domainHashes, sealedBid)
 	return
 }
@@ -132,13 +142,35 @@ func NewBid(session *registrarcontract.RegistrarcontractSession, name string, ow
 
 // RevealBid reveals an existing bid on an existing auction
 func RevealBid(session *registrarcontract.RegistrarcontractSession, name string, owner *common.Address, amount big.Int, salt string) (tx *types.Transaction, err error) {
-	tx, err = session.UnsealBid(LabelHash(name), &amount, LabelHash(salt))
+	domain, err := Domain(name)
+	if err != nil {
+		err = errors.New("invavlid name")
+		return
+	}
+	domainHash, err := LabelHash(domain)
+	if err != nil {
+		return
+	}
+	saltHash, err := LabelHash(salt)
+	if err != nil {
+		return
+	}
+	tx, err = session.UnsealBid(domainHash, &amount, saltHash)
 	return
 }
 
 // FinishAuction reveals an existing bid on an existing auction
 func FinishAuction(session *registrarcontract.RegistrarcontractSession, name string) (tx *types.Transaction, err error) {
-	tx, err = session.FinalizeAuction(LabelHash(name))
+	domain, err := Domain(name)
+	if err != nil {
+		err = errors.New("invavlid name")
+		return
+	}
+	domainHash, err := LabelHash(domain)
+	if err != nil {
+		return
+	}
+	tx, err = session.FinalizeAuction(domainHash)
 	return
 }
 
@@ -149,8 +181,12 @@ func State(contract *registrarcontract.Registrarcontract, name string) (state st
 		err = errors.New("invalid name")
 		return
 	}
+	domainHash, err := LabelHash(domain)
+	if err != nil {
+		return
+	}
 
-	status, err := contract.State(nil, LabelHash(domain))
+	status, err := contract.State(nil, domainHash)
 	if err != nil {
 		return
 	}
