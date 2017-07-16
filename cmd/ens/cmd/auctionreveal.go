@@ -41,7 +41,7 @@ The keystore for the address must be local (i.e. listed with 'get accounts list'
 
 In quiet mode this will return 0 if the transaction to reveal the bid is sent successfully, otherwise 1.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cli.Assert(auctionStartSalt != "", quiet, "Salt is required")
+		cli.Assert(auctionRevealSalt != "", quiet, "Salt is required")
 
 		// Ensure that the name is in a suitable state
 		registrarContract, err := ens.RegistrarContract(client, rpcclient)
