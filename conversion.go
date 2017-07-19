@@ -76,13 +76,10 @@ var million = big.NewInt(1000000)
 // WeiToString turns a number of Wei in to a string.
 // If the 'standard' argument is true then this will display the value
 // in either (KMG)Wei or Ether only
-func WeiToString(input *big.Int, standard bool) (string, error) {
+func WeiToString(input *big.Int, standard bool) string {
 	// Input sanity checks
-	if input.Cmp(zero) < 0 {
-		return "", errors.New("Input must be 0 or positive")
-	}
 	if input.Cmp(zero) == 0 {
-		return "0", nil
+		return "0"
 	}
 
 	postfixPos := 0
@@ -134,7 +131,7 @@ func WeiToString(input *big.Int, standard bool) (string, error) {
 	}
 
 	// Return our value
-	return fmt.Sprintf("%s %s", outputValue, metricUnits[postfixPos]), nil
+	return fmt.Sprintf("%s %s", outputValue, metricUnits[postfixPos])
 }
 
 func decimalStringToWei(amount string, unit string, result *big.Int) error {
