@@ -105,7 +105,7 @@ func SealBid(name string, owner *common.Address, amount big.Int, salt string) (h
 	return
 }
 
-// StartAuctionAndBid starts an auction and bids in the same transaction
+// StartAuctionAndBid starts an auction and bids in the same transaction.
 func StartAuctionAndBid(session *registrarcontract.RegistrarcontractSession, name string, owner *common.Address, amount big.Int, salt string) (tx *types.Transaction, err error) {
 	domain, err := Domain(name)
 	if err != nil {
@@ -126,6 +126,17 @@ func StartAuctionAndBid(session *registrarcontract.RegistrarcontractSession, nam
 	}
 	domainHashes = append(domainHashes, domainHash)
 	tx, err = session.StartAuctionsAndBid(domainHashes, sealedBid)
+	return
+}
+
+// InvalidateName invalidates a non-conformant ENS registration.
+func InvalidateName(session *registrarcontract.RegistrarcontractSession, name string) (tx *types.Transaction, err error) {
+	domain, err := Domain(name)
+	if err != nil {
+		err = errors.New("invalid name")
+		return
+	}
+	tx, err = session.InvalidateName(domain)
 	return
 }
 
@@ -171,6 +182,29 @@ func FinishAuction(session *registrarcontract.RegistrarcontractSession, name str
 		return
 	}
 	tx, err = session.FinalizeAuction(domainHash)
+	return
+}
+
+func RegistrationDate(contract *registrarcontract.Registrarcontract, name string) (registrationDate time.Time, err error) {
+	domain, err := Domain(name)
+	if err != nil {
+		err = errors.New("invalid name")
+		return
+	}
+	domainHash, err := LabelHash(domain)
+	if err != nil {
+		return
+	}
+
+	_, _, registration, _, _, err := contract.Entries(nil, domainHash)
+	if err != nil {
+		return
+	}
+	if registration.Int64() == 0 {
+		err = errors.New("name has not been auctioned")
+		return
+	}
+	registrationDate = time.Unix(registration.Int64(), 0)
 	return
 }
 
