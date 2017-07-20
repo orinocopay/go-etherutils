@@ -127,9 +127,30 @@ func TestStringToWeiWithGWeiUnit(t *testing.T) {
 	assert.Equal(t, expected, result, "Did not receive expected result")
 }
 
-func TestStringToWeiWithNoUnit(t *testing.T) {
+func TestStringToWeiNoUnit(t *testing.T) {
 	expected, _ := new(big.Int).SetString("1000", 10)
 	result, err := StringToWei("1000 ")
+	assert.Nil(t, err, "Failed to convert normal string to Wei")
+	assert.Equal(t, expected, result, "Did not receive expected result")
+}
+
+func TestStringToWeiNoSpace(t *testing.T) {
+	expected, _ := new(big.Int).SetString("2000000", 10)
+	result, err := StringToWei("2megawei")
+	assert.Nil(t, err, "Failed to convert normal string to Wei")
+	assert.Equal(t, expected, result, "Did not receive expected result")
+}
+
+func TestStringToWeiWhitespace(t *testing.T) {
+	expected, _ := new(big.Int).SetString("2000000", 10)
+	result, err := StringToWei("   2 megawei   ")
+	assert.Nil(t, err, "Failed to convert normal string to Wei")
+	assert.Equal(t, expected, result, "Did not receive expected result")
+}
+
+func TestStringToWeiWithSplitUnits(t *testing.T) {
+	expected, _ := new(big.Int).SetString("2000000", 10)
+	result, err := StringToWei("2 mega wei")
 	assert.Nil(t, err, "Failed to convert normal string to Wei")
 	assert.Equal(t, expected, result, "Did not receive expected result")
 }
@@ -167,11 +188,6 @@ func TestStringToWeiWithWeiDecimal1(t *testing.T) {
 func TestStringToWeiWithWeiNegative(t *testing.T) {
 	_, err := StringToWei("-2 wei")
 	assert.NotNil(t, err, "Converted string with negative Wei to Wei value")
-}
-
-func TestStringToWeiWithTooManyParts(t *testing.T) {
-	_, err := StringToWei("2 mega wei")
-	assert.NotNil(t, err, "Converted string with too many parts to Wei value")
 }
 
 func TestWeiToStringWithZero(t *testing.T) {

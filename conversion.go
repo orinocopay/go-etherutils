@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"regexp"
 	"strings"
 )
 
@@ -32,31 +33,34 @@ func StringToWei(input string) (*big.Int, error) {
 	if input == "" {
 		return nil, errors.New("Failed to parse empty value")
 	}
+	input = strings.Replace(input, " ", "", -1)
 	var result big.Int
-	// See if the input contains a space
-	if strings.Contains(input, " ") {
-		// Break the value in to number and space
-		s := strings.Split(input, " ")
-
-		if len(s) != 2 {
-			return nil, fmt.Errorf("Unknown format of %s", input)
-		}
-
-		if strings.Contains(s[0], ".") {
-			err := decimalStringToWei(s[0], s[1], &result)
+	// Separate the number from the unit (if any)
+	re := regexp.MustCompile("([0-9]*(?:\\.[0-9]*)?)([A-Za-z]+)?")
+	s := re.FindAllStringSubmatch(input, -1)
+	units := "Wei"
+	if len(s) != 1 {
+		return nil, errors.New("Invalid format")
+	}
+	if len(s[0]) < 2 || len(s[0]) > 3 {
+		return nil, errors.New("Invalid format")
+	}
+	if len(s[0]) == 2 {
+		// No format; simple number of Wei
+		result.SetString(input, 10)
+	} else {
+		units = s[0][2]
+		if strings.Contains(s[0][1], ".") {
+			err := decimalStringToWei(s[0][1], units, &result)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			err := integerStringToWei(s[0], s[1], &result)
+			err := integerStringToWei(s[0][1], units, &result)
 			if err != nil {
 				return nil, err
 			}
 		}
-
-	} else {
-		// No space so we're a simple number of Wei
-		result.SetString(input, 10)
 	}
 
 	// Ensure we don't have a negative number
