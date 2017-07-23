@@ -27,6 +27,10 @@ var p = idna.New(idna.MapForLookup(), idna.StrictDomainName(true), idna.Transiti
 
 func normalize(input string) (output string, err error) {
 	output, err = p.ToUnicode(input)
+	// If the name started with a period then ToUnicode() removes it, but we want to keep it
+	if strings.HasPrefix(input, ".") && !strings.HasPrefix(output, ".") {
+		output = "." + output
+	}
 	return
 }
 

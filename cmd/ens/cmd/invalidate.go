@@ -51,7 +51,7 @@ In quiet mode this will return 0 if the invalidate transaction has been submitte
 		account, err := cli.ObtainAccount(wallet, invalidateAddress, invalidatePassphrase)
 		cli.ErrCheck(err, quiet, "Failed to obtain an account for the address")
 
-		gasLimit := big.NewInt(500000)
+		gasLimit := big.NewInt(200000)
 		gasPrice, err := etherutils.StringToWei(invalidateGasPriceStr)
 		cli.ErrCheck(err, quiet, "Invalid gas price")
 

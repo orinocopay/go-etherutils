@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -34,22 +33,21 @@ import (
 )
 
 // RegistryContract obtains the registry contract for a chain
-func RegistryContract(client *ethclient.Client, rpcclient *rpc.Client) (registry *registrycontract.Registrycontract, err error) {
+func RegistryContract(client *ethclient.Client, rpcclient *rpc.Client) (registry *registrycontract.RegistryContract, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	//chainID, err := client.NetworkID(ctx)
 	chainID, err := etherutils.NetworkID(ctx, rpcclient)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	// Instantiate the registry contract
 	if chainID.Cmp(params.MainnetChainConfig.ChainId) == 0 {
-		registry, err = registrycontract.NewRegistrycontract(common.HexToAddress("314159265dd8dbb310642f98f50c066173c1259b"), client)
+		registry, err = registrycontract.NewRegistryContract(common.HexToAddress("314159265dd8dbb310642f98f50c066173c1259b"), client)
 	} else if chainID.Cmp(params.TestnetChainConfig.ChainId) == 0 {
-		registry, err = registrycontract.NewRegistrycontract(common.HexToAddress("112234455c3a32fd11230c42e7bccd4a84e02010"), client)
+		registry, err = registrycontract.NewRegistryContract(common.HexToAddress("112234455c3a32fd11230c42e7bccd4a84e02010"), client)
 	} else if chainID.Cmp(params.RinkebyChainConfig.ChainId) == 0 {
-		registry, err = registrycontract.NewRegistrycontract(common.HexToAddress("e7410170f87102DF0055eB195163A03B7F2Bff4A"), client)
+		registry, err = registrycontract.NewRegistryContract(common.HexToAddress("e7410170f87102DF0055eB195163A03B7F2Bff4A"), client)
 	} else {
 		err = errors.New("Unknown network ID")
 	}
@@ -57,7 +55,7 @@ func RegistryContract(client *ethclient.Client, rpcclient *rpc.Client) (registry
 }
 
 // Resolver obtains the address of the resolver for a .eth name
-func Resolver(contract *registrycontract.Registrycontract, name string) (address common.Address, err error) {
+func Resolver(contract *registrycontract.RegistryContract, name string) (address common.Address, err error) {
 	nameHash, err := NameHash(name)
 	if err != nil {
 		return
@@ -70,8 +68,7 @@ func Resolver(contract *registrycontract.Registrycontract, name string) (address
 }
 
 // SetResolver sets the resolver for a name
-func SetResolver(session *registrycontract.RegistrycontractSession, name string, resolverAddr *common.Address) (tx *types.Transaction, err error) {
-	fmt.Println("SetResolver: resolver address is", resolverAddr)
+func SetResolver(session *registrycontract.RegistryContractSession, name string, resolverAddr *common.Address) (tx *types.Transaction, err error) {
 	// Set the resolver for this name
 	nameHash, err := NameHash(name)
 	if err != nil {
@@ -82,7 +79,7 @@ func SetResolver(session *registrycontract.RegistrycontractSession, name string,
 }
 
 // SetSubdomainOwner sets the owner for a subdomain of a name
-func SetSubdomainOwner(session *registrycontract.RegistrycontractSession, name string, subdomain string, ownerAddr *common.Address) (tx *types.Transaction, err error) {
+func SetSubdomainOwner(session *registrycontract.RegistryContractSession, name string, subdomain string, ownerAddr *common.Address) (tx *types.Transaction, err error) {
 	nameHash, err := NameHash(name)
 	if err != nil {
 		return
@@ -96,12 +93,12 @@ func SetSubdomainOwner(session *registrycontract.RegistrycontractSession, name s
 }
 
 // CreateRegistrySession creates a session suitable for multiple calls
-func CreateRegistrySession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrycontract.Registrycontract, gasLimit *big.Int, gasPrice *big.Int) *registrycontract.RegistrycontractSession {
+func CreateRegistrySession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrycontract.RegistryContract, gasLimit *big.Int, gasPrice *big.Int) *registrycontract.RegistryContractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
 	// Return our session
-	session := &registrycontract.RegistrycontractSession{
+	session := &registrycontract.RegistryContractSession{
 		Contract: contract,
 		CallOpts: bind.CallOpts{
 			Pending: true,

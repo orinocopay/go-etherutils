@@ -35,6 +35,13 @@ func TestNameHashTLD(t *testing.T) {
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
+func TestNameHashDottedTLD(t *testing.T) {
+	expected := "8cc9f31a5e7af6381efc751d98d289e3f3589f1b6f19b9b989ace1788b939cf7"
+	actual, err := NameHash(".eth")
+	assert.Nil(t, err, "Failed to hash")
+	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
+}
+
 func TestNameHashFooEth(t *testing.T) {
 	expected := "de9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f"
 	actual, err := NameHash("foo.eth")
@@ -63,12 +70,19 @@ func TestLabelHashFoo(t *testing.T) {
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
+func TestNameHashReverse(t *testing.T) {
+	expected := "91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2"
+	actual, err := NameHash("addr.reverse")
+	assert.Nil(t, err, "Failed to hash")
+	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
+}
+
 func TestNameHashNormalize1(t *testing.T) {
 	first, err := NameHash("foo.eth")
 	assert.Nil(t, err, "Failed to hash")
 	second, err := NameHash("FOO.eth")
 	assert.Nil(t, err, "Failed to hash")
-	assert.Equal(t, first, second, "Did not receive expected result")
+	assert.Equal(t, hex.EncodeToString(first[:]), hex.EncodeToString(second[:]), "Did not receive expected result")
 }
 
 func TestNormalizeFoo(t *testing.T) {
@@ -88,6 +102,13 @@ func TestNormalizeCase(t *testing.T) {
 func TestNormalizeHomoglyph(t *testing.T) {
 	expected := "foo.eth"
 	actual, err := normalize("fоо.eth")
+	assert.Nil(t, err, "Failed to normalize")
+	assert.Equal(t, expected, actual, "Did not receive expected result")
+}
+
+func TestNormalize2(t *testing.T) {
+	expected := ".eth"
+	actual, err := normalize(".eth")
 	assert.Nil(t, err, "Failed to normalize")
 	assert.Equal(t, expected, actual, "Did not receive expected result")
 }

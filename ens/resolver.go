@@ -104,12 +104,12 @@ func resolveHash(client *ethclient.Client, name string, rpcclient *rpc.Client) (
 }
 
 // CreateResolverSession creates a session suitable for multiple calls
-func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *resolvercontract.Resolvercontract, gasLimit *big.Int, gasPrice *big.Int) *resolvercontract.ResolvercontractSession {
+func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *resolvercontract.ResolverContract, gasLimit *big.Int, gasPrice *big.Int) *resolvercontract.ResolverContractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
 	// Return our session
-	session := &resolvercontract.ResolvercontractSession{
+	session := &resolvercontract.ResolverContractSession{
 		Contract: contract,
 		CallOpts: bind.CallOpts{
 			Pending: true,
@@ -125,8 +125,14 @@ func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *a
 	return session
 }
 
+// Reverse resolves an address in to an ENS name
+// This will return an error if the name is not found or otherwise 0
+func Reverse(client *ethclient.Client, input *common.Address, rpcclient *rpc.Client) (name string, err error) {
+	return "", errors.New("Not implemented")
+}
+
 // SetResolution sets the address to which a name resolves
-func SetResolution(session *resolvercontract.ResolvercontractSession, name string, resolutionAddress *common.Address) (tx *types.Transaction, err error) {
+func SetResolution(session *resolvercontract.ResolverContractSession, name string, resolutionAddress *common.Address) (tx *types.Transaction, err error) {
 	nameHash, err := NameHash(name)
 	if err != nil {
 		return
@@ -136,9 +142,9 @@ func SetResolution(session *resolvercontract.ResolvercontractSession, name strin
 }
 
 // ResolverContractByAddress instantiates the resolver contract at aspecific address
-func ResolverContractByAddress(client *ethclient.Client, resolverAddress common.Address) (resolver *resolvercontract.Resolvercontract, err error) {
+func ResolverContractByAddress(client *ethclient.Client, resolverAddress common.Address) (resolver *resolvercontract.ResolverContract, err error) {
 	// Instantiate the resolver contract
-	resolver, err = resolvercontract.NewResolvercontract(resolverAddress, client)
+	resolver, err = resolvercontract.NewResolverContract(resolverAddress, client)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +153,7 @@ func ResolverContractByAddress(client *ethclient.Client, resolverAddress common.
 }
 
 // ResolverContract obtains the resolver contract for a name
-func ResolverContract(client *ethclient.Client, name string, rpcclient *rpc.Client) (resolver *resolvercontract.Resolvercontract, err error) {
+func ResolverContract(client *ethclient.Client, name string, rpcclient *rpc.Client) (resolver *resolvercontract.ResolverContract, err error) {
 	nameHash, err := NameHash(name)
 	if err != nil {
 		return

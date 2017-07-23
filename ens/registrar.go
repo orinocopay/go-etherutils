@@ -26,42 +26,47 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/registrarcontract"
 )
 
 // RegistrarContract obtains the registrar contract for a chain
-func RegistrarContract(client *ethclient.Client, rpcclient *rpc.Client) (registrar *registrarcontract.Registrarcontract, err error) {
+func RegistrarContract(client *ethclient.Client, rpcclient *rpc.Client) (registrar *registrarcontract.RegistrarContract, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	//chainID, err := client.NetworkID(ctx)
-	chainID, err := etherutils.NetworkID(ctx, rpcclient)
+	_, err = etherutils.NetworkID(ctx, rpcclient)
 	if err != nil {
 		return nil, err
 	}
 
-	// Instantiate the registrar contract
-	if chainID.Cmp(params.MainnetChainConfig.ChainId) == 0 {
-		registrar, err = registrarcontract.NewRegistrarcontract(common.HexToAddress("6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"), client)
-	} else if chainID.Cmp(params.TestnetChainConfig.ChainId) == 0 {
-		registrar, err = registrarcontract.NewRegistrarcontract(common.HexToAddress("c19fd9004b5c9789391679de6d766b981db94610"), client)
-	} else if chainID.Cmp(params.RinkebyChainConfig.ChainId) == 0 {
-		registrar, err = registrarcontract.NewRegistrarcontract(common.HexToAddress("21397c1a1f4acd9132fe36df011610564b87e24b"), client)
-	} else {
-		err = errors.New("Unknown network ID")
+	// Obtain a registry contract
+	registry, err := RegistryContract(client, rpcclient)
+	if err != nil {
+		return
 	}
+
+	// Obtain the registry address from the registrar
+	nameHash, err := NameHash("eth")
+	registrarAddress, err := registry.Owner(nil, nameHash)
+	if err != nil {
+		return
+	}
+	if registrarAddress == UnknownAddress {
+		err = errors.New("no registrar for that network")
+	}
+
+	registrar, err = registrarcontract.NewRegistrarContract(registrarAddress, client)
 	return
 }
 
 // CreateRegistrarSession creates a session suitable for multiple calls
-func CreateRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrarcontract.Registrarcontract, gasLimit *big.Int, gasPrice *big.Int) *registrarcontract.RegistrarcontractSession {
+func CreateRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrarcontract.RegistrarContract, gasLimit *big.Int, gasPrice *big.Int) *registrarcontract.RegistrarContractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
 	// Return our session
-	session := &registrarcontract.RegistrarcontractSession{
+	session := &registrarcontract.RegistrarContractSession{
 		Contract: contract,
 		CallOpts: bind.CallOpts{
 			Pending: true,
@@ -106,7 +111,7 @@ func SealBid(name string, owner *common.Address, amount big.Int, salt string) (h
 }
 
 // StartAuctionAndBid starts an auction and bids in the same transaction.
-func StartAuctionAndBid(session *registrarcontract.RegistrarcontractSession, name string, owner *common.Address, amount big.Int, salt string) (tx *types.Transaction, err error) {
+func StartAuctionAndBid(session *registrarcontract.RegistrarContractSession, name string, owner *common.Address, amount big.Int, salt string) (tx *types.Transaction, err error) {
 	domain, err := Domain(name)
 	if err != nil {
 		err = errors.New("invalid name")
@@ -130,7 +135,7 @@ func StartAuctionAndBid(session *registrarcontract.RegistrarcontractSession, nam
 }
 
 // InvalidateName invalidates a non-conformant ENS registration.
-func InvalidateName(session *registrarcontract.RegistrarcontractSession, name string) (tx *types.Transaction, err error) {
+func InvalidateName(session *registrarcontract.RegistrarContractSession, name string) (tx *types.Transaction, err error) {
 	domain, err := Domain(name)
 	if err != nil {
 		err = errors.New("invalid name")
@@ -141,7 +146,7 @@ func InvalidateName(session *registrarcontract.RegistrarcontractSession, name st
 }
 
 // NewBid bids on an existing auction
-func NewBid(session *registrarcontract.RegistrarcontractSession, name string, owner *common.Address, amount big.Int, salt string) (tx *types.Transaction, err error) {
+func NewBid(session *registrarcontract.RegistrarContractSession, name string, owner *common.Address, amount big.Int, salt string) (tx *types.Transaction, err error) {
 	sealedBid, err := SealBid(name, owner, amount, salt)
 	if err != nil {
 		return
@@ -152,7 +157,7 @@ func NewBid(session *registrarcontract.RegistrarcontractSession, name string, ow
 }
 
 // RevealBid reveals an existing bid on an existing auction
-func RevealBid(session *registrarcontract.RegistrarcontractSession, name string, owner *common.Address, amount big.Int, salt string) (tx *types.Transaction, err error) {
+func RevealBid(session *registrarcontract.RegistrarContractSession, name string, owner *common.Address, amount big.Int, salt string) (tx *types.Transaction, err error) {
 	domain, err := Domain(name)
 	if err != nil {
 		err = errors.New("invavlid name")
@@ -171,7 +176,7 @@ func RevealBid(session *registrarcontract.RegistrarcontractSession, name string,
 }
 
 // FinishAuction reveals an existing bid on an existing auction
-func FinishAuction(session *registrarcontract.RegistrarcontractSession, name string) (tx *types.Transaction, err error) {
+func FinishAuction(session *registrarcontract.RegistrarContractSession, name string) (tx *types.Transaction, err error) {
 	domain, err := Domain(name)
 	if err != nil {
 		err = errors.New("invavlid name")
@@ -185,7 +190,7 @@ func FinishAuction(session *registrarcontract.RegistrarcontractSession, name str
 	return
 }
 
-func RegistrationDate(contract *registrarcontract.Registrarcontract, name string) (registrationDate time.Time, err error) {
+func RegistrationDate(contract *registrarcontract.RegistrarContract, name string) (registrationDate time.Time, err error) {
 	domain, err := Domain(name)
 	if err != nil {
 		err = errors.New("invalid name")
@@ -209,7 +214,7 @@ func RegistrationDate(contract *registrarcontract.Registrarcontract, name string
 }
 
 // State obains the current state of a name
-func State(contract *registrarcontract.Registrarcontract, name string) (state string, err error) {
+func State(contract *registrarcontract.RegistrarContract, name string) (state string, err error) {
 	domain, err := Domain(name)
 	if err != nil {
 		err = errors.New("invalid name")
@@ -245,7 +250,7 @@ func State(contract *registrarcontract.Registrarcontract, name string) (state st
 }
 
 // NameInState checks if a name is in a given state, and errors if not.
-func NameInState(contract *registrarcontract.Registrarcontract, name string, desiredState string) (inState bool, err error) {
+func NameInState(contract *registrarcontract.RegistrarContract, name string, desiredState string) (inState bool, err error) {
 	state, err := State(contract, name)
 	if err == nil {
 		if state == desiredState {

@@ -35,21 +35,32 @@ In quiet mode this will return 0 if the auction is currently bidding, otherwise 
 
 	Run: func(cmd *cobra.Command, args []string) {
 		registrarContract, err := ens.RegistrarContract(client, rpcclient)
-		registrationDate, err := ens.RegistrationDate(registrarContract, args[0])
-		cli.ErrCheck(err, quiet, "Cannot obtain auction status")
-
-		twoDaysAgo := time.Duration(-48) * time.Hour
-		fiveDaysAgo := time.Duration(-120) * time.Hour
+		state, err := ens.State(registrarContract, args[0])
+		cli.ErrCheck(err, quiet, "Cannot obtain status")
 		if quiet {
-			if registrationDate.Add(twoDaysAgo).After(time.Now()) {
+			if state == "Bidding" {
 				os.Exit(0)
 			} else {
 				os.Exit(1)
 			}
-		} else {
-			fmt.Println("     Auction:", registrationDate.Add(fiveDaysAgo))
-			fmt.Println("      Reveal:", registrationDate.Add(twoDaysAgo))
-			fmt.Println("Registration:", registrationDate)
+		}
+
+		if state == "Available" {
+			fmt.Println("Available for auction")
+			os.Exit(0)
+		}
+
+		registrationDate, err := ens.RegistrationDate(registrarContract, args[0])
+		cli.ErrCheck(err, quiet, "Cannot obtain auction status")
+		twoDaysAgo := time.Duration(-48) * time.Hour
+
+		switch state {
+		case "Bidding":
+			fmt.Println("Bidding until", registrationDate.Add(twoDaysAgo))
+		case "Revealing":
+			fmt.Println("Revealing until", registrationDate)
+		default:
+			fmt.Println(state)
 		}
 	},
 }
