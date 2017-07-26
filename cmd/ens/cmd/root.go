@@ -16,6 +16,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 	"os"
 	"strings"
@@ -26,11 +27,13 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/cli"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
+var logFile string
 var quiet bool
 var connection string
 
@@ -63,6 +66,16 @@ func persistentPreRun(cmd *cobra.Command, args []string) {
 	// Add '.eth' to the end of the name if not present
 	if !strings.HasSuffix(args[0], ".eth") {
 		args[0] += ".eth"
+	}
+
+	// Set the log file if set, otherwise ignore
+	if logFile != "" {
+		f, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE, 0755)
+		cli.ErrCheck(err, quiet, "Failed to open log file")
+		log.SetOutput(f)
+		log.SetFormatter(&log.JSONFormatter{})
+	} else {
+		log.SetOutput(ioutil.Discard)
 	}
 
 	// Create a connection to an Ethereum node
@@ -101,6 +114,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cmd.yaml)")
+	RootCmd.PersistentFlags().StringVarP(&logFile, "log", "l", "", "log activity to the named file")
 	RootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "no output")
 	RootCmd.PersistentFlags().StringVarP(&connection, "connection", "c", "https://api.orinocopay.com:8546/", "path to the Ethereum connection")
 }

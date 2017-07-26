@@ -21,6 +21,7 @@ import (
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/cli"
 	"github.com/orinocopay/go-etherutils/ens"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -76,13 +77,18 @@ In quiet mode this will return 0 if the transaction to finish the auction is sen
 		if !quiet {
 			fmt.Println("Transaction ID is", tx.Hash().Hex())
 		}
+		log.WithFields(log.Fields{"transactionid": tx.Hash().Hex(),
+			"networkid": chainID,
+			"name":      args[0],
+			"address":   auctionFinishAddress.Hex()}).Info("Auction finish")
+
 	},
 }
 
 func init() {
 	auctionCmd.AddCommand(auctionFinishCmd)
 
-	auctionFinishCmd.Flags().StringVarP(&auctionFinishPassphrase, "passphrase", "p", "", "Passphrase for the account that owns the bidding address")
-	auctionFinishCmd.Flags().StringVarP(&auctionFinishAddressStr, "address", "a", "", "Address doing the bidding")
+	auctionFinishCmd.Flags().StringVarP(&auctionFinishPassphrase, "passphrase", "p", "", "Passphrase for the account that owns the winning address")
+	auctionFinishCmd.Flags().StringVarP(&auctionFinishAddressStr, "address", "a", "", "Address that has won the auction")
 	auctionFinishCmd.Flags().StringVarP(&auctionFinishGasPriceStr, "gasprice", "g", "20 GWei", "Gas price for the transaction")
 }

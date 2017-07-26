@@ -22,11 +22,12 @@ import (
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/cli"
 	"github.com/orinocopay/go-etherutils/ens"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 var subdomainOwnerPassphrase string
-var subdomainOwnerOwnerStr string
+var subdomainOwnerNameStr string
 var subdomainOwnerGasPriceStr string
 var subdomainOwnerBidPriceStr string
 var subdomainOwnerMaskPriceStr string
@@ -77,18 +78,23 @@ In quiet mode this will return 0 if the transaction to set the owner of the subd
 		cli.ErrCheck(err, quiet, "Invalid gas price")
 
 		// Obtain the address who will own the subdomain
-		subdomainOwnerOwner, err := ens.Resolve(client, subdomainOwnerOwnerStr, rpcclient)
+		subdomainOwnerAddress, err := ens.Resolve(client, subdomainOwnerNameStr, rpcclient)
 		cli.ErrCheck(err, quiet, "Invalid owner")
 
 		// Set up our session
 		session := ens.CreateRegistrySession(chainID, &wallet, account, subdomainOwnerPassphrase, registryContract, gasLimit, gasPrice)
 
 		// Set the subdomain owner
-		tx, err := ens.SetSubdomainOwner(session, domain, subdomain, &subdomainOwnerOwner)
+		tx, err := ens.SetSubdomainOwner(session, domain, subdomain, &subdomainOwnerAddress)
 		cli.ErrCheck(err, quiet, "Failed to send transaction")
 		if !quiet {
 			fmt.Println("Transaction ID is", tx.Hash().Hex())
 		}
+		log.WithFields(log.Fields{"transactionid": tx.Hash().Hex(),
+			"networkid": chainID,
+			"name":      args[0],
+			"owner":     subdomainOwnerAddress.Hex()}).Info("Subdomain owner")
+
 	},
 }
 
@@ -96,6 +102,6 @@ func init() {
 	subdomainCmd.AddCommand(subdomainOwnerCmd)
 
 	subdomainOwnerCmd.Flags().StringVarP(&subdomainOwnerPassphrase, "passphrase", "p", "", "Passphrase for the account that owns the name")
-	subdomainOwnerCmd.Flags().StringVarP(&subdomainOwnerOwnerStr, "owner", "o", "", "Owner of the subdomain")
+	subdomainOwnerCmd.Flags().StringVarP(&subdomainOwnerNameStr, "owner", "o", "", "Owner of the subdomain")
 	subdomainOwnerCmd.Flags().StringVarP(&subdomainOwnerGasPriceStr, "gasprice", "g", "20 GWei", "Gas price for the transaction")
 }

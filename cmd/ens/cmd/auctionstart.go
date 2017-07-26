@@ -20,6 +20,7 @@ import (
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/cli"
 	"github.com/orinocopay/go-etherutils/ens"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -84,6 +85,13 @@ In quiet mode this will return 0 if the transaction to start the auction is sent
 		if !quiet {
 			fmt.Println("Transaction ID is", tx.Hash().Hex())
 		}
+		log.WithFields(log.Fields{"transactionid": tx.Hash().Hex(),
+			"name":      args[0],
+			"networkid": chainID,
+			"address":   auctionStartAddress.Hex(),
+			"salt":      auctionStartSalt,
+			"bid":       bidPrice,
+			"mask":      bidMask}).Info("Auction start")
 	},
 }
 

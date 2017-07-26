@@ -22,6 +22,7 @@ import (
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/cli"
 	"github.com/orinocopay/go-etherutils/ens"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -69,27 +70,11 @@ In quiet mode this will return 0 if the transaction to set the name is sent succ
 		if !quiet {
 			fmt.Println("Transaction ID is", tx.Hash().Hex())
 		}
-		// Obtain the resolver for this name
-		//		reverseName := nameSetAddressStr + ".addr.reverse"
-		//		if strings.HasPrefix(reverseName, "0x") {
-		//			reverseName := reverseName[2:]
-		//		}
-		//		fmt.Println(reverseName)
-		//		resolverAddress, err := ens.Resolver(registryContract, reverseName)
-		//		cli.ErrCheck(err, quiet, "No resolver for that address")
+		log.WithFields(log.Fields{"transactionid": tx.Hash().Hex(),
+			"networkid": chainID,
+			"name":      args[0],
+			"address":   account.Address.Hex()}).Info("Name set")
 
-		// Obtain the address to which we resolve
-		//		resolutionAddress, err := ens.Resolve(client, addressAddressStr, rpcclient)
-		//		cli.ErrCheck(err, quiet, "Invalid address")
-
-		// Set the address to which we resolve
-		//		resolverContract, err := ens.ResolverContractByAddress(client, resolverAddress)
-		//		cli.ErrCheck(err, quiet, "Failed to obtain resolver contract")
-		//		tx, err := ens.SetResolution(resolverSession, args[0], &resolutionAddress)
-		//		cli.ErrCheck(err, quiet, "Failed to set resolution for that name")
-		//		if !quiet {
-		//			fmt.Println("Transaction ID is", tx.Hash().Hex())
-		//		}
 	},
 }
 

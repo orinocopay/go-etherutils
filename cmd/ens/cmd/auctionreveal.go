@@ -20,6 +20,7 @@ import (
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/cli"
 	"github.com/orinocopay/go-etherutils/ens"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -72,6 +73,13 @@ In quiet mode this will return 0 if the transaction to reveal the bid is sent su
 		if !quiet {
 			fmt.Println("Transaction ID is", tx.Hash().Hex())
 		}
+		log.WithFields(log.Fields{"transactionid": tx.Hash().Hex(),
+			"networkid": chainID,
+			"name":      args[0],
+			"address":   auctionRevealAddress.Hex(),
+			"salt":      auctionRevealSalt,
+			"bid":       bidPrice}).Info("Auction reveal")
+
 	},
 }
 

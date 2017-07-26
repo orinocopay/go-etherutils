@@ -21,6 +21,7 @@ import (
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/cli"
 	"github.com/orinocopay/go-etherutils/ens"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -83,6 +84,11 @@ In quiet mode this will return 0 if the transaction to set the address is sent s
 		if !quiet {
 			fmt.Println("Transaction ID is", tx.Hash().Hex())
 		}
+		log.WithFields(log.Fields{"transactionid": tx.Hash().Hex(),
+			"networkid": chainID,
+			"name":      args[0],
+			"address":   resolutionAddress.Hex()}).Info("Address set")
+
 	},
 }
 
