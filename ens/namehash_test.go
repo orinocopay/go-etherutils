@@ -42,6 +42,13 @@ func TestNameHashDottedTLD(t *testing.T) {
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
+func TestNameHashResolverEth(t *testing.T) {
+	expected := "fdd5d5de6dd63db72bbc2d487944ba13bf775b50a80805fe6fcaba9b0fba88f5"
+	actual, err := NameHash("resolver.eth")
+	assert.Nil(t, err, "Failed to hash")
+	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
+}
+
 func TestNameHashFooEth(t *testing.T) {
 	expected := "de9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f"
 	actual, err := NameHash("foo.eth")
@@ -95,13 +102,6 @@ func TestNormalizeFoo(t *testing.T) {
 func TestNormalizeCase(t *testing.T) {
 	expected := "foo"
 	actual, err := normalize("FOO")
-	assert.Nil(t, err, "Failed to normalize")
-	assert.Equal(t, expected, actual, "Did not receive expected result")
-}
-
-func TestNormalizeHomoglyph(t *testing.T) {
-	expected := "foo.eth"
-	actual, err := normalize("fоо.eth")
 	assert.Nil(t, err, "Failed to normalize")
 	assert.Equal(t, expected, actual, "Did not receive expected result")
 }
