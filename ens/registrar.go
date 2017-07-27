@@ -213,6 +213,45 @@ func RegistrationDate(contract *registrarcontract.RegistrarContract, name string
 	return
 }
 
+func Entry(contract *registrarcontract.RegistrarContract, name string) (state string, deed common.Address, registrationDate time.Time, value *big.Int, highestBid *big.Int, err error) {
+	domain, err := Domain(name)
+	if err != nil {
+		err = errors.New("invalid name")
+		return
+	}
+	domainHash, err := LabelHash(domain)
+	if err != nil {
+		return
+	}
+
+	status, deed, registration, value, highestBid, err := contract.Entries(nil, domainHash)
+	if err != nil {
+		return
+	}
+	if registration.Int64() == 0 {
+		err = errors.New("name has not been auctioned")
+		return
+	}
+	registrationDate = time.Unix(registration.Int64(), 0)
+	switch status {
+	case 0:
+		state = "Available"
+	case 1:
+		state = "Bidding"
+	case 2:
+		state = "Owned"
+	case 3:
+		state = "Forbidden"
+	case 4:
+		state = "Revealing"
+	case 5:
+		state = "Unavailable"
+	default:
+		state = "Unknown"
+	}
+	return
+}
+
 // State obains the current state of a name
 func State(contract *registrarcontract.RegistrarContract, name string) (state string, err error) {
 	domain, err := Domain(name)
