@@ -29,8 +29,8 @@ import (
 	"github.com/orinocopay/go-etherutils/ens/reverseregistrarcontract"
 )
 
-// ReverseRegistrarContract obtains the reverse registrar contract for a chain
-func ReverseRegistrarContract(client *ethclient.Client, rpcclient *rpc.Client) (registrar *reverseregistrarcontract.ReverseRegistrarContract, err error) {
+// ReverseRegistrar obtains the reverse registrar contract for a chain
+func ReverseRegistrar(client *ethclient.Client, rpcclient *rpc.Client) (registrar *reverseregistrarcontract.ReverseRegistrarContract, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_, err = etherutils.NetworkID(ctx, rpcclient)

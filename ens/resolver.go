@@ -25,7 +25,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/resolvercontract"
@@ -37,18 +36,43 @@ var zeroHash = make([]byte, 32)
 var UnknownAddress = common.HexToAddress("00")
 
 // PublicResolver obtains the public resolver for a chain
-func PublicResolver(chainID *big.Int, client *ethclient.Client) (address common.Address, err error) {
-	// Instantiate the registry contract
-	if chainID.Cmp(params.MainnetChainConfig.ChainId) == 0 {
-		address = common.HexToAddress("5FfC014343cd971B7eb70732021E26C35B744cc4")
-	} else if chainID.Cmp(params.TestnetChainConfig.ChainId) == 0 {
-		address = common.HexToAddress("4c641fb9bad9b60ef180c31f56051ce826d21a9a")
-		// TODO does Rinkeby have a public resolver?
-		//	} else if chainID.Cmp(params.RinkebyChainConfig.ChainId) == 0 {
-		//		address = common.HexToAddress("")
-	} else {
-		err = errors.New("Unknown network ID")
+func PublicResolver(client *ethclient.Client, rpcclient *rpc.Client) (address common.Address, err error) {
+	address, err = resolverAddress(client, "resolver.eth", rpcclient)
+
+	return
+}
+
+func resolverAddress(client *ethclient.Client, name string, rpcclient *rpc.Client) (address common.Address, err error) {
+	nameHash, err := NameHash(name)
+	if err != nil {
+		return
 	}
+
+	registryContract, err := RegistryContract(client, rpcclient)
+	if err != nil {
+		return
+	}
+
+	// Check that this name is owned
+	ownerAddress, err := registryContract.Owner(nil, nameHash)
+	if err != nil {
+		return
+	}
+	if bytes.Compare(ownerAddress.Bytes(), UnknownAddress.Bytes()) == 0 {
+		err = errors.New("unregistered name")
+		return
+	}
+
+	// Obtain the resolver address for this name
+	address, err = registryContract.Resolver(nil, nameHash)
+	if err != nil {
+		return
+	}
+	if bytes.Compare(address.Bytes(), UnknownAddress.Bytes()) == 0 {
+		err = errors.New("no resolver")
+		return
+	}
+
 	return
 }
 
@@ -125,12 +149,6 @@ func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *a
 	return session
 }
 
-// Reverse resolves an address in to an ENS name
-// This will return an error if the name is not found or otherwise 0
-func Reverse(client *ethclient.Client, input *common.Address, rpcclient *rpc.Client) (name string, err error) {
-	return "", errors.New("Not implemented")
-}
-
 // SetResolution sets the address to which a name resolves
 func SetResolution(session *resolvercontract.ResolverContractSession, name string, resolutionAddress *common.Address) (tx *types.Transaction, err error) {
 	nameHash, err := NameHash(name)
@@ -145,42 +163,21 @@ func SetResolution(session *resolvercontract.ResolverContractSession, name strin
 func ResolverContractByAddress(client *ethclient.Client, resolverAddress common.Address) (resolver *resolvercontract.ResolverContract, err error) {
 	// Instantiate the resolver contract
 	resolver, err = resolvercontract.NewResolverContract(resolverAddress, client)
-	if err != nil {
-		return nil, err
-	}
 
 	return
 }
 
 // ResolverContract obtains the resolver contract for a name
 func ResolverContract(client *ethclient.Client, name string, rpcclient *rpc.Client) (resolver *resolvercontract.ResolverContract, err error) {
-	nameHash, err := NameHash(name)
+	resolverAddress, err := resolverAddress(client, name, rpcclient)
 	if err != nil {
 		return
 	}
-
-	registryContract, err := RegistryContract(client, rpcclient)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check that this name is owned
-	ownerAddress, err := registryContract.Owner(nil, nameHash)
-	if err != nil {
-		return nil, err
-	}
-	if bytes.Compare(ownerAddress.Bytes(), UnknownAddress.Bytes()) == 0 {
-		return nil, errors.New("unregistered name")
-	}
-
-	// Obtain the resolver for this name
-	resolverAddress, err := registryContract.Resolver(nil, nameHash)
-	if err != nil {
-		return nil, err
-	}
 	if bytes.Compare(resolverAddress.Bytes(), UnknownAddress.Bytes()) == 0 {
-		return nil, errors.New("no resolver")
+		err = errors.New("no resolver")
+		return
 	}
 
-	return ResolverContractByAddress(client, resolverAddress)
+	resolver, err = ResolverContractByAddress(client, resolverAddress)
+	return
 }

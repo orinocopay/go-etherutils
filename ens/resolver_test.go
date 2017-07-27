@@ -18,6 +18,7 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,8 +51,15 @@ func TestResolveBadResolver(t *testing.T) {
 }
 
 func TestResolveTestEnsTest(t *testing.T) {
-	expected := "cd83f15ae0df92696d841e656daf3b41704322cb"
+	expected := "388ea662ef2c223ec0b047d41bf3c0f362142ad5"
 	actual, err := Resolve(client, "test.enstest.eth", rpcclient)
+	assert.Nil(t, err, "Error resolving name")
+	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
+}
+
+func TestResolveResolverEth(t *testing.T) {
+	expected := "5ffc014343cd971b7eb70732021e26c35b744cc4"
+	actual, err := Resolve(client, "resolver.eth", rpcclient)
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
@@ -61,4 +69,12 @@ func TestResolveNickJohnson(t *testing.T) {
 	actual, err := Resolve(client, "nickjohnson.eth", rpcclient)
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
+}
+
+func TestReverseResolveTestEnsTest(t *testing.T) {
+	expected := "test.enstest.eth"
+	address := common.HexToAddress("0x388ea662ef2c223ec0b047d41bf3c0f362142ad5")
+	actual, err := ReverseResolve(client, &address, rpcclient)
+	assert.Nil(t, err, "Error resolving address")
+	assert.Equal(t, expected, actual, "Did not receive expected result")
 }
