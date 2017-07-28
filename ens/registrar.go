@@ -29,6 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/registrarcontract"
+	"github.com/orinocopay/go-etherutils/ens/registrycontract"
 )
 
 // RegistrarContract obtains the registrar contract for a chain
@@ -213,7 +214,7 @@ func RegistrationDate(contract *registrarcontract.RegistrarContract, name string
 	return
 }
 
-func Entry(contract *registrarcontract.RegistrarContract, name string) (state string, deed common.Address, registrationDate time.Time, value *big.Int, highestBid *big.Int, err error) {
+func Entry(contract *registrarcontract.RegistrarContract, client *ethclient.Client, name string) (state string, deed common.Address, registrationDate time.Time, value *big.Int, highestBid *big.Int, err error) {
 	domain, err := Domain(name)
 	if err != nil {
 		err = errors.New("invalid name")
@@ -223,8 +224,9 @@ func Entry(contract *registrarcontract.RegistrarContract, name string) (state st
 	if err != nil {
 		return
 	}
+	nameHash, err := NameHash(name)
 
-	status, deed, registration, value, highestBid, err := contract.Entries(nil, domainHash)
+	status, _, registration, value, highestBid, err := contract.Entries(nil, domainHash)
 	if err != nil {
 		return
 	}
@@ -239,7 +241,24 @@ func Entry(contract *registrarcontract.RegistrarContract, name string) (state st
 	case 1:
 		state = "Bidding"
 	case 2:
-		state = "Owned"
+		// Might be won or owned
+		var registryContract *registrycontract.RegistryContract
+		registryContract, err = RegistryContractFromRegistrar(client, contract)
+		if err != nil {
+			return
+		}
+
+		var owner common.Address
+		owner, err = registryContract.Owner(nil, nameHash)
+		if err != nil {
+			return
+		}
+
+		if owner == UnknownAddress {
+			state = "Won"
+		} else {
+			state = "Owned"
+		}
 	case 3:
 		state = "Forbidden"
 	case 4:
@@ -253,44 +272,15 @@ func Entry(contract *registrarcontract.RegistrarContract, name string) (state st
 }
 
 // State obains the current state of a name
-func State(contract *registrarcontract.RegistrarContract, name string) (state string, err error) {
-	domain, err := Domain(name)
-	if err != nil {
-		err = errors.New("invalid name")
-		return
-	}
-	domainHash, err := LabelHash(domain)
-	if err != nil {
-		return
-	}
-
-	status, err := contract.State(nil, domainHash)
-	if err != nil {
-		return
-	}
-	switch status {
-	case 0:
-		state = "Available"
-	case 1:
-		state = "Bidding"
-	case 2:
-		state = "Owned"
-	case 3:
-		state = "Forbidden"
-	case 4:
-		state = "Revealing"
-	case 5:
-		state = "Unavailable"
-	default:
-		state = "Unknown"
-	}
+func State(contract *registrarcontract.RegistrarContract, client *ethclient.Client, name string) (state string, err error) {
+	state, _, _, _, _, err = Entry(contract, client, name)
 
 	return
 }
 
 // NameInState checks if a name is in a given state, and errors if not.
-func NameInState(contract *registrarcontract.RegistrarContract, name string, desiredState string) (inState bool, err error) {
-	state, err := State(contract, name)
+func NameInState(contract *registrarcontract.RegistrarContract, client *ethclient.Client, name string, desiredState string) (inState bool, err error) {
+	state, err := State(contract, client, name)
 	if err == nil {
 		if state == desiredState {
 			inState = true
@@ -300,6 +290,8 @@ func NameInState(contract *registrarcontract.RegistrarContract, name string, des
 				err = errors.New("this name has not been auctioned")
 			case "Bidding":
 				err = errors.New("this name is being auctioned")
+			case "Won":
+				err = errors.New("this name's auction has finished")
 			case "Owned":
 				err = errors.New("this name is owned")
 			case "Forbidden":

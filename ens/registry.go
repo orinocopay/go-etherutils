@@ -29,6 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
+	"github.com/orinocopay/go-etherutils/ens/registrarcontract"
 	"github.com/orinocopay/go-etherutils/ens/registrycontract"
 )
 
@@ -54,7 +55,16 @@ func RegistryContract(client *ethclient.Client, rpcclient *rpc.Client) (registry
 	return
 }
 
-// Resolver obtains the address of the resolver for a .eth name
+func RegistryContractFromRegistrar(client *ethclient.Client, registrar *registrarcontract.RegistrarContract) (registry *registrycontract.RegistryContract, err error) {
+	registryAddress, err := registrar.Ens(nil)
+	if err != nil {
+		return
+	}
+	registry, err = registrycontract.NewRegistryContract(registryAddress, client)
+	return
+}
+
+// Reselver obtains the address of the resolver for a .eth name
 func Resolver(contract *registrycontract.RegistryContract, name string) (address common.Address, err error) {
 	nameHash, err := NameHash(name)
 	if err != nil {
