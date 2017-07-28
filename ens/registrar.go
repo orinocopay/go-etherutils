@@ -208,10 +208,6 @@ func Entry(contract *registrarcontract.RegistrarContract, client *ethclient.Clie
 	if err != nil {
 		return
 	}
-	if registration.Int64() == 0 {
-		err = errors.New("name has not been auctioned")
-		return
-	}
 	registrationDate = time.Unix(registration.Int64(), 0)
 	switch status {
 	case 0:
