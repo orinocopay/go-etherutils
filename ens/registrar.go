@@ -191,30 +191,8 @@ func FinishAuction(session *registrarcontract.RegistrarContractSession, name str
 	return
 }
 
-func RegistrationDate(contract *registrarcontract.RegistrarContract, name string) (registrationDate time.Time, err error) {
-	domain, err := Domain(name)
-	if err != nil {
-		err = errors.New("invalid name")
-		return
-	}
-	domainHash, err := LabelHash(domain)
-	if err != nil {
-		return
-	}
-
-	_, _, registration, _, _, err := contract.Entries(nil, domainHash)
-	if err != nil {
-		return
-	}
-	if registration.Int64() == 0 {
-		err = errors.New("name has not been auctioned")
-		return
-	}
-	registrationDate = time.Unix(registration.Int64(), 0)
-	return
-}
-
-func Entry(contract *registrarcontract.RegistrarContract, client *ethclient.Client, name string) (state string, deed common.Address, registrationDate time.Time, value *big.Int, highestBid *big.Int, err error) {
+// Entry obtains a registrar entry for a name
+func Entry(contract *registrarcontract.RegistrarContract, client *ethclient.Client, name string) (state string, deedAddress common.Address, registrationDate time.Time, value *big.Int, highestBid *big.Int, err error) {
 	domain, err := Domain(name)
 	if err != nil {
 		err = errors.New("invalid name")
@@ -226,7 +204,7 @@ func Entry(contract *registrarcontract.RegistrarContract, client *ethclient.Clie
 	}
 	nameHash, err := NameHash(name)
 
-	status, _, registration, value, highestBid, err := contract.Entries(nil, domainHash)
+	status, deedAddress, registration, value, highestBid, err := contract.Entries(nil, domainHash)
 	if err != nil {
 		return
 	}

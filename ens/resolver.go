@@ -81,11 +81,10 @@ func resolverAddress(client *ethclient.Client, name string, rpcclient *rpc.Clien
 func Resolve(client *ethclient.Client, input string, rpcclient *rpc.Client) (address common.Address, err error) {
 	if strings.HasSuffix(input, ".eth") {
 		return resolveName(client, input, rpcclient)
-	} else {
-		address = common.HexToAddress(input)
-		if address == UnknownAddress {
-			err = errors.New("could not parse address")
-		}
+	}
+	address = common.HexToAddress(input)
+	if address == UnknownAddress {
+		err = errors.New("could not parse address")
 	}
 
 	return

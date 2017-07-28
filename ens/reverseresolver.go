@@ -29,7 +29,7 @@ import (
 	"github.com/orinocopay/go-etherutils/ens/reverseresolvercontract"
 )
 
-// Reverse resolves an address in to an ENS name
+// ReverseResolve resolves an address in to an ENS name
 // This will return an error if the name is not found or otherwise 0
 func ReverseResolve(client *ethclient.Client, input *common.Address, rpcclient *rpc.Client) (name string, err error) {
 	nameHash, err := NameHash(input.Hex()[2:] + ".addr.reverse")

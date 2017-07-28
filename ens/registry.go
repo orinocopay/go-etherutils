@@ -55,6 +55,8 @@ func RegistryContract(client *ethclient.Client, rpcclient *rpc.Client) (registry
 	return
 }
 
+// RegistryContractFromRegistrar obtains the registry contract given an
+// existing registrar contract
 func RegistryContractFromRegistrar(client *ethclient.Client, registrar *registrarcontract.RegistrarContract) (registry *registrycontract.RegistryContract, err error) {
 	registryAddress, err := registrar.Ens(nil)
 	if err != nil {
@@ -64,7 +66,7 @@ func RegistryContractFromRegistrar(client *ethclient.Client, registrar *registra
 	return
 }
 
-// Reselver obtains the address of the resolver for a .eth name
+// Resolver obtains the address of the resolver for a .eth name
 func Resolver(contract *registrycontract.RegistryContract, name string) (address common.Address, err error) {
 	nameHash, err := NameHash(name)
 	if err != nil {
