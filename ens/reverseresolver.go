@@ -23,7 +23,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/reverseregistrarcontract"
 	"github.com/orinocopay/go-etherutils/ens/reverseresolvercontract"
@@ -31,13 +30,13 @@ import (
 
 // ReverseResolve resolves an address in to an ENS name
 // This will return an error if the name is not found or otherwise 0
-func ReverseResolve(client *ethclient.Client, input *common.Address, rpcclient *rpc.Client) (name string, err error) {
+func ReverseResolve(client *ethclient.Client, input *common.Address) (name string, err error) {
 	nameHash, err := NameHash(input.Hex()[2:] + ".addr.reverse")
 	if err != nil {
 		return
 	}
 
-	contract, err := ReverseResolver(client, rpcclient)
+	contract, err := ReverseResolver(client)
 	if err != nil {
 		return "", err
 	}
@@ -49,13 +48,13 @@ func ReverseResolve(client *ethclient.Client, input *common.Address, rpcclient *
 }
 
 // ReverseResolver obtains the reverse resolver contract
-func ReverseResolver(client *ethclient.Client, rpcclient *rpc.Client) (resolver *reverseresolvercontract.ReverseResolver, err error) {
+func ReverseResolver(client *ethclient.Client) (resolver *reverseresolvercontract.ReverseResolver, err error) {
 	nameHash, err := NameHash("addr.reverse")
 	if err != nil {
 		return
 	}
 
-	registryContract, err := RegistryContract(client, rpcclient)
+	registryContract, err := RegistryContract(client)
 	if err != nil {
 		return
 	}

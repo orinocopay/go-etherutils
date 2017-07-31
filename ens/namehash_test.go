@@ -63,9 +63,9 @@ func TestNameHashFooDotEth(t *testing.T) {
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
-func TestNameHashNickJohnsonEth(t *testing.T) {
-	expected := "25cfe90ad9477590acf268bb3ad00ab18465ecce12760be3d8eac81c9f329995"
-	actual, err := NameHash("nickjohnson.eth")
+func TestNameHashSubdomain(t *testing.T) {
+	expected := "275ae88e7263cdce5ab6cf296cdd6253f5e385353fe39cfff2dd4a2b14551cf3"
+	actual, err := NameHash("bar.foo.eth")
 	assert.Nil(t, err, "Failed to hash")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
