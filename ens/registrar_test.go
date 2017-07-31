@@ -19,17 +19,19 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/stretchr/testify/assert"
 )
 
+var rpcclient, _ = rpc.Dial("https://ropsten.orinocopay.com:8546/")
 var client, _ = ethclient.Dial("https://ropsten.orinocopay.com:8546/")
 
 func TestSealBid1(t *testing.T) {
-	contract, err := RegistrarContract(client)
+	contract, err := RegistrarContract(client, rpcclient)
 	assert.Nil(t, err, "Failed to obtain contract")
 
-	address, err := Resolve(client, "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1")
+	address, err := Resolve(client, "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1", rpcclient)
 	assert.Nil(t, err, "Failed to obtain address")
 	nameHash, err := LabelHash("foo")
 	assert.Nil(t, err, "Failed to hash")
@@ -50,7 +52,7 @@ func TestSealBid1(t *testing.T) {
 func TestSealBid2(t *testing.T) {
 	expected := "9ab01ba2d5496808710e66c99a2a79e78e7f5002b19a5590a33042bc9ca03583"
 
-	address, err := Resolve(client, "0x388ea662ef2c223ec0b047d41bf3c0f362142ad5")
+	address, err := Resolve(client, "0x388ea662ef2c223ec0b047d41bf3c0f362142ad5", rpcclient)
 	assert.Nil(t, err, "Failed to obtain address")
 	amount, err := etherutils.StringToWei("0.01 Ether")
 	assert.Nil(t, err, "Failed to obtain amount")

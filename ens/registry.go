@@ -27,16 +27,17 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/registrarcontract"
 	"github.com/orinocopay/go-etherutils/ens/registrycontract"
 )
 
 // RegistryContract obtains the registry contract for a chain
-func RegistryContract(client *ethclient.Client) (registry *registrycontract.RegistryContract, err error) {
+func RegistryContract(client *ethclient.Client, rpcclient *rpc.Client) (registry *registrycontract.RegistryContract, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	chainID, err := client.NetworkID(ctx)
+	chainID, err := etherutils.NetworkID(ctx, rpcclient)
 	if err != nil {
 		return
 	}

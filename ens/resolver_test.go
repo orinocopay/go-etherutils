@@ -23,50 +23,50 @@ import (
 )
 
 func TestResolveEmpty(t *testing.T) {
-	_, err := Resolve(client, "")
+	_, err := Resolve(client, "", rpcclient)
 	assert.NotNil(t, err, "Resolved empty name")
 }
 
 func TestResolveZero(t *testing.T) {
-	_, err := Resolve(client, "0")
+	_, err := Resolve(client, "0", rpcclient)
 	assert.NotNil(t, err, "Resolved empty name")
 }
 
 func TestResolveNotPresent(t *testing.T) {
-	_, err := Resolve(client, "sirnotappearinginthisregistry.eth")
+	_, err := Resolve(client, "sirnotappearinginthisregistry.eth", rpcclient)
 	assert.NotNil(t, err, "Resolved name that does not exist")
 	assert.Equal(t, "unregistered name", err.Error(), "Unexpected error")
 }
 
 func TestResolveNoResolver(t *testing.T) {
-	_, err := Resolve(client, "noresolver.eth")
+	_, err := Resolve(client, "noresolver.eth", rpcclient)
 	assert.NotNil(t, err, "Resolved name without a resolver")
 	assert.Equal(t, "no resolver", err.Error(), "Unexpected error")
 }
 
 func TestResolveBadResolver(t *testing.T) {
-	_, err := Resolve(client, "resolvestozero.eth")
+	_, err := Resolve(client, "resolvestozero.eth", rpcclient)
 	assert.NotNil(t, err, "Resolved name with a bad resolver")
 	assert.Equal(t, "no address", err.Error(), "Unexpected error")
 }
 
 func TestResolveTestEnsTest(t *testing.T) {
 	expected := "388ea662ef2c223ec0b047d41bf3c0f362142ad5"
-	actual, err := Resolve(client, "test.enstest.eth")
+	actual, err := Resolve(client, "test.enstest.eth", rpcclient)
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
 func TestResolveResolverEth(t *testing.T) {
 	expected := "5ffc014343cd971b7eb70732021e26c35b744cc4"
-	actual, err := Resolve(client, "resolver.eth")
+	actual, err := Resolve(client, "resolver.eth", rpcclient)
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
 func TestResolveNickJohnson(t *testing.T) {
 	expected := "70abd981e01ad3e6eb1726a5001000877ab04417"
-	actual, err := Resolve(client, "nickjohnson.eth")
+	actual, err := Resolve(client, "nickjohnson.eth", rpcclient)
 	assert.Nil(t, err, "Error resolving name")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
@@ -74,7 +74,7 @@ func TestResolveNickJohnson(t *testing.T) {
 func TestReverseResolveTestEnsTest(t *testing.T) {
 	expected := "test.enstest.eth"
 	address := common.HexToAddress("0x388ea662ef2c223ec0b047d41bf3c0f362142ad5")
-	actual, err := ReverseResolve(client, &address)
+	actual, err := ReverseResolve(client, &address, rpcclient)
 	assert.Nil(t, err, "Error resolving address")
 	assert.Equal(t, expected, actual, "Did not receive expected result")
 }

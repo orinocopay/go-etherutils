@@ -24,21 +24,22 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/reverseregistrarcontract"
 )
 
 // ReverseRegistrar obtains the reverse registrar contract for a chain
-func ReverseRegistrar(client *ethclient.Client) (registrar *reverseregistrarcontract.ReverseRegistrarContract, err error) {
+func ReverseRegistrar(client *ethclient.Client, rpcclient *rpc.Client) (registrar *reverseregistrarcontract.ReverseRegistrarContract, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err = client.NetworkID(ctx)
+	_, err = etherutils.NetworkID(ctx, rpcclient)
 	if err != nil {
 		return nil, err
 	}
 
 	// Obtain a registry contract
-	registry, err := RegistryContract(client)
+	registry, err := RegistryContract(client, rpcclient)
 	if err != nil {
 		return
 	}
