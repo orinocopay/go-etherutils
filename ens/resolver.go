@@ -25,7 +25,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/resolvercontract"
 )
@@ -36,19 +35,19 @@ var zeroHash = make([]byte, 32)
 var UnknownAddress = common.HexToAddress("00")
 
 // PublicResolver obtains the public resolver for a chain
-func PublicResolver(client *ethclient.Client, rpcclient *rpc.Client) (address common.Address, err error) {
-	address, err = resolverAddress(client, "resolver.eth", rpcclient)
+func PublicResolver(client *ethclient.Client) (address common.Address, err error) {
+	address, err = resolverAddress(client, "resolver.eth")
 
 	return
 }
 
-func resolverAddress(client *ethclient.Client, name string, rpcclient *rpc.Client) (address common.Address, err error) {
+func resolverAddress(client *ethclient.Client, name string) (address common.Address, err error) {
 	nameHash, err := NameHash(name)
 	if err != nil {
 		return
 	}
 
-	registryContract, err := RegistryContract(client, rpcclient)
+	registryContract, err := RegistryContract(client)
 	if err != nil {
 		return
 	}
@@ -78,9 +77,9 @@ func resolverAddress(client *ethclient.Client, name string, rpcclient *rpc.Clien
 
 // Resolve resolves an ENS name in to an Etheruem address
 // This will return an error if the name is not found or otherwise 0
-func Resolve(client *ethclient.Client, input string, rpcclient *rpc.Client) (address common.Address, err error) {
+func Resolve(client *ethclient.Client, input string) (address common.Address, err error) {
 	if strings.HasSuffix(input, ".eth") {
-		return resolveName(client, input, rpcclient)
+		return resolveName(client, input)
 	}
 	address = common.HexToAddress(input)
 	if address == UnknownAddress {
@@ -90,7 +89,7 @@ func Resolve(client *ethclient.Client, input string, rpcclient *rpc.Client) (add
 	return
 }
 
-func resolveName(client *ethclient.Client, input string, rpcclient *rpc.Client) (address common.Address, err error) {
+func resolveName(client *ethclient.Client, input string) (address common.Address, err error) {
 	var nameHash [32]byte
 	nameHash, err = NameHash(input)
 	if err != nil {
@@ -99,13 +98,13 @@ func resolveName(client *ethclient.Client, input string, rpcclient *rpc.Client) 
 	if bytes.Compare(nameHash[:], zeroHash) == 0 {
 		err = errors.New("Bad name")
 	} else {
-		address, err = resolveHash(client, input, rpcclient)
+		address, err = resolveHash(client, input)
 	}
 	return
 }
 
-func resolveHash(client *ethclient.Client, name string, rpcclient *rpc.Client) (address common.Address, err error) {
-	contract, err := ResolverContract(client, name, rpcclient)
+func resolveHash(client *ethclient.Client, name string) (address common.Address, err error) {
+	contract, err := ResolverContract(client, name)
 	if err != nil {
 		return UnknownAddress, err
 	}
@@ -167,8 +166,8 @@ func ResolverContractByAddress(client *ethclient.Client, resolverAddress common.
 }
 
 // ResolverContract obtains the resolver contract for a name
-func ResolverContract(client *ethclient.Client, name string, rpcclient *rpc.Client) (resolver *resolvercontract.ResolverContract, err error) {
-	resolverAddress, err := resolverAddress(client, name, rpcclient)
+func ResolverContract(client *ethclient.Client, name string) (resolver *resolvercontract.ResolverContract, err error) {
+	resolverAddress, err := resolverAddress(client, name)
 	if err != nil {
 		return
 	}
