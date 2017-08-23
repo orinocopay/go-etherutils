@@ -42,10 +42,7 @@ func PublicResolver(client *ethclient.Client) (address common.Address, err error
 }
 
 func resolverAddress(client *ethclient.Client, name string) (address common.Address, err error) {
-	nameHash, err := NameHash(name)
-	if err != nil {
-		return
-	}
+	nameHash := NameHash(name)
 
 	registryContract, err := RegistryContract(client)
 	if err != nil {
@@ -91,10 +88,7 @@ func Resolve(client *ethclient.Client, input string) (address common.Address, er
 
 func resolveName(client *ethclient.Client, input string) (address common.Address, err error) {
 	var nameHash [32]byte
-	nameHash, err = NameHash(input)
-	if err != nil {
-		return
-	}
+	nameHash = NameHash(input)
 	if bytes.Compare(nameHash[:], zeroHash) == 0 {
 		err = errors.New("Bad name")
 	} else {
@@ -110,11 +104,7 @@ func resolveHash(client *ethclient.Client, name string) (address common.Address,
 	}
 
 	// Resolve the name
-	nameHash, err := NameHash(name)
-	if err != nil {
-		return
-	}
-	address, err = contract.Addr(nil, nameHash)
+	address, err = contract.Addr(nil, NameHash(name))
 	if err != nil {
 		return UnknownAddress, err
 	}
@@ -149,11 +139,7 @@ func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *a
 
 // SetResolution sets the address to which a name resolves
 func SetResolution(session *resolvercontract.ResolverContractSession, name string, resolutionAddress *common.Address) (tx *types.Transaction, err error) {
-	nameHash, err := NameHash(name)
-	if err != nil {
-		return
-	}
-	tx, err = session.SetAddr(nameHash, *resolutionAddress)
+	tx, err = session.SetAddr(NameHash(name), *resolutionAddress)
 	return
 }
 

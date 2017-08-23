@@ -31,10 +31,7 @@ import (
 // ReverseResolve resolves an address in to an ENS name
 // This will return an error if the name is not found or otherwise 0
 func ReverseResolve(client *ethclient.Client, input *common.Address) (name string, err error) {
-	nameHash, err := NameHash(input.Hex()[2:] + ".addr.reverse")
-	if err != nil {
-		return
-	}
+	nameHash := NameHash(input.Hex()[2:] + ".addr.reverse")
 
 	contract, err := ReverseResolver(client)
 	if err != nil {
@@ -49,18 +46,13 @@ func ReverseResolve(client *ethclient.Client, input *common.Address) (name strin
 
 // ReverseResolver obtains the reverse resolver contract
 func ReverseResolver(client *ethclient.Client) (resolver *reverseresolvercontract.ReverseResolver, err error) {
-	nameHash, err := NameHash("addr.reverse")
-	if err != nil {
-		return
-	}
-
 	registryContract, err := RegistryContract(client)
 	if err != nil {
 		return
 	}
 
 	// Obtain the reverse registrar address
-	reverseRegistrarAddress, err := registryContract.Owner(nil, nameHash)
+	reverseRegistrarAddress, err := registryContract.Owner(nil, NameHash("addr.reverse"))
 	if err != nil {
 		return
 	}

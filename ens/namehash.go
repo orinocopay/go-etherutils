@@ -25,8 +25,12 @@ import (
 
 var p = idna.New(idna.MapForLookup(), idna.StrictDomainName(true), idna.Transitional(false))
 
-func normalize(input string) (output string, err error) {
-	output, err = p.ToUnicode(input)
+func normalize(input string) (output string) {
+	output, err := p.ToUnicode(input)
+	if err != nil {
+		// TODO find out why ToUnicode() might fail and handle it here
+		output = input
+	}
 	// If the name started with a period then ToUnicode() removes it, but we want to keep it
 	if strings.HasPrefix(input, ".") && !strings.HasPrefix(output, ".") {
 		output = "." + output
@@ -35,14 +39,11 @@ func normalize(input string) (output string, err error) {
 }
 
 // LabelHash generates a simple hash for a piece of a name.
-func LabelHash(label string) (hash [32]byte, err error) {
+func LabelHash(label string) (hash [32]byte) {
 	if label == "" {
 		return
 	}
-	normalizedLabel, err := normalize(label)
-	if err != nil {
-		return
-	}
+	normalizedLabel := normalize(label)
 
 	sha := sha3.NewKeccak256()
 	sha.Write([]byte(normalizedLabel))
@@ -52,14 +53,11 @@ func LabelHash(label string) (hash [32]byte, err error) {
 
 // NameHash generates a hash from a name that can be used to
 // look up the name in ENS
-func NameHash(name string) (hash [32]byte, err error) {
+func NameHash(name string) (hash [32]byte) {
 	if name == "" {
 		return
 	}
-	normalizedName, err := normalize(name)
-	if err != nil {
-		return
-	}
+	normalizedName := normalize(name)
 	parts := strings.Split(normalizedName, ".")
 	for i := len(parts) - 1; i >= 0; i-- {
 		hash = nameHashPart(hash, parts[i])
@@ -69,10 +67,7 @@ func NameHash(name string) (hash [32]byte, err error) {
 
 // Domain returns the domain directly before the '.eth' in a name
 func Domain(name string) (domain string, err error) {
-	normalizedName, err := normalize(name)
-	if err != nil {
-		return
-	}
+	normalizedName := normalize(name)
 	nameBits := strings.Split(normalizedName, ".")
 	if len(nameBits) < 2 {
 		err = errors.New("invalid name")

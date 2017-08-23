@@ -46,9 +46,8 @@ func RegistrarContract(client *ethclient.Client) (registrar *registrarcontract.R
 		return
 	}
 
-	// Obtain the registry address from the registrar
-	nameHash, err := NameHash("eth")
-	registrarAddress, err := registry.Owner(nil, nameHash)
+	// Obtain the registrar address from the registry
+	registrarAddress, err := registry.Owner(nil, NameHash("eth"))
 	if err != nil {
 		return
 	}
@@ -89,10 +88,7 @@ func SealBid(name string, owner *common.Address, amount big.Int, salt string) (h
 		err = errors.New("invalid name")
 		return
 	}
-	domainHash, err := LabelHash(domain)
-	if err != nil {
-		return
-	}
+	domainHash := LabelHash(domain)
 
 	sha := sha3.NewKeccak256()
 	sha.Write(domainHash[:])
@@ -101,12 +97,21 @@ func SealBid(name string, owner *common.Address, amount big.Int, salt string) (h
 	var amountBytes [32]byte
 	copy(amountBytes[len(amountBytes)-len(amount.Bytes()):], amount.Bytes()[:])
 	sha.Write(amountBytes[:])
-	saltHash, err := LabelHash(salt)
-	if err != nil {
-		return
-	}
+	saltHash := saltHash(salt)
 	sha.Write(saltHash[:])
 	sha.Sum(hash[:0])
+	return
+}
+
+// StartAuction starts an auction without bidding
+func StartAuction(session *registrarcontract.RegistrarContractSession, name string) (tx *types.Transaction, err error) {
+	domain, err := Domain(name)
+	if err != nil {
+		err = errors.New("invalid name")
+		return
+	}
+
+	tx, err = session.StartAuction(LabelHash(domain))
 	return
 }
 
@@ -125,11 +130,7 @@ func StartAuctionAndBid(session *registrarcontract.RegistrarContractSession, nam
 
 	var domainHashes [][32]byte
 	domainHashes = make([][32]byte, 0, 1)
-	domainHash, err := LabelHash(domain)
-	if err != nil {
-		return
-	}
-	domainHashes = append(domainHashes, domainHash)
+	domainHashes = append(domainHashes, LabelHash(domain))
 	tx, err = session.StartAuctionsAndBid(domainHashes, sealedBid)
 	return
 }
@@ -160,17 +161,11 @@ func NewBid(session *registrarcontract.RegistrarContractSession, name string, ow
 func RevealBid(session *registrarcontract.RegistrarContractSession, name string, owner *common.Address, amount big.Int, salt string) (tx *types.Transaction, err error) {
 	domain, err := Domain(name)
 	if err != nil {
-		err = errors.New("invavlid name")
+		err = errors.New("invalid name")
 		return
 	}
-	domainHash, err := LabelHash(domain)
-	if err != nil {
-		return
-	}
-	saltHash, err := LabelHash(salt)
-	if err != nil {
-		return
-	}
+	domainHash := LabelHash(domain)
+	saltHash := saltHash(salt)
 	tx, err = session.UnsealBid(domainHash, &amount, saltHash)
 	return
 }
@@ -179,14 +174,20 @@ func RevealBid(session *registrarcontract.RegistrarContractSession, name string,
 func FinishAuction(session *registrarcontract.RegistrarContractSession, name string) (tx *types.Transaction, err error) {
 	domain, err := Domain(name)
 	if err != nil {
-		err = errors.New("invavlid name")
+		err = errors.New("invalid name")
 		return
 	}
-	domainHash, err := LabelHash(domain)
+	tx, err = session.FinalizeAuction(LabelHash(domain))
+	return
+}
+
+func Transfer(session *registrarcontract.RegistrarContractSession, name string, to common.Address) (tx *types.Transaction, err error) {
+	domain, err := Domain(name)
 	if err != nil {
+		err = errors.New("invalid name")
 		return
 	}
-	tx, err = session.FinalizeAuction(domainHash)
+	tx, err = session.Transfer(LabelHash(domain), to)
 	return
 }
 
@@ -197,13 +198,8 @@ func Entry(contract *registrarcontract.RegistrarContract, client *ethclient.Clie
 		err = errors.New("invalid name")
 		return
 	}
-	domainHash, err := LabelHash(domain)
-	if err != nil {
-		return
-	}
-	nameHash, err := NameHash(name)
 
-	status, deedAddress, registration, value, highestBid, err := contract.Entries(nil, domainHash)
+	status, deedAddress, registration, value, highestBid, err := contract.Entries(nil, LabelHash(domain))
 	if err != nil {
 		return
 	}
@@ -222,7 +218,7 @@ func Entry(contract *registrarcontract.RegistrarContract, client *ethclient.Clie
 		}
 
 		var owner common.Address
-		owner, err = registryContract.Owner(nil, nameHash)
+		owner, err = registryContract.Owner(nil, NameHash(name))
 		if err != nil {
 			return
 		}
@@ -278,5 +274,13 @@ func NameInState(contract *registrarcontract.RegistrarContract, client *ethclien
 			}
 		}
 	}
+	return
+}
+
+// Generate a simple hash for a salt
+func saltHash(salt string) (hash [32]byte) {
+	sha := sha3.NewKeccak256()
+	sha.Write([]byte(salt))
+	sha.Sum(hash[:0])
 	return
 }

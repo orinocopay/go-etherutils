@@ -44,8 +44,7 @@ func ReverseRegistrar(client *ethclient.Client) (registrar *reverseregistrarcont
 	}
 
 	// Obtain the registry address from the registrar
-	nameHash, err := NameHash("addr.reverse")
-	registrarAddress, err := registry.Owner(nil, nameHash)
+	registrarAddress, err := registry.Owner(nil, NameHash("addr.reverse"))
 	if err != nil {
 		return
 	}
