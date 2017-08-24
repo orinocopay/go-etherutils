@@ -50,10 +50,10 @@ func ObtainWallet(chainID *big.Int, address common.Address) (accounts.Wallet, er
 }
 
 // ObtainAccount fetches the account for a given address
-func ObtainAccount(wallet accounts.Wallet, address common.Address, passphrase string) (*accounts.Account, error) {
-	for _, account := range wallet.Accounts() {
-		if address == account.Address {
-			if !VerifyPassphrase(wallet, account, passphrase) {
+func ObtainAccount(wallet *accounts.Wallet, address *common.Address, passphrase string) (*accounts.Account, error) {
+	for _, account := range (*wallet).Accounts() {
+		if *address == account.Address {
+			if !VerifyPassphrase(*wallet, account, passphrase) {
 				return nil, errors.New("invalid passphrase")
 			}
 			return &account, nil
