@@ -23,11 +23,23 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/deedcontract"
+	"github.com/orinocopay/go-etherutils/ens/registrarcontract"
 )
 
 // DeedContract obtains the deed contract at a particular address
 func DeedContract(client *ethclient.Client, address *common.Address) (deed *deedcontract.DeedContract, err error) {
 	deed, err = deedcontract.NewDeedContract(*address, client)
+	return
+}
+
+// DeedContract obtains the deed contract for a particular name
+func DeedContractFor(client *ethclient.Client, registrar *registrarcontract.RegistrarContract, name string) (deedContract *deedcontract.DeedContract, err error) {
+	_, deedAddress, _, _, _, err := Entry(registrar, client, name)
+	if err != nil {
+		return
+	}
+	deedContract, err = DeedContract(client, &deedAddress)
+
 	return
 }
 
@@ -51,4 +63,16 @@ func CreateDeedSession(chainID *big.Int, wallet *accounts.Wallet, account *accou
 	}
 
 	return session
+}
+
+// Owner obtains the owner of a deed
+func Owner(contract *deedcontract.DeedContract) (address common.Address, err error) {
+	address, err = contract.Owner(nil)
+	return
+}
+
+// PreviousOwner obtains the previous owner of a deed
+func PreviousOwner(contract *deedcontract.DeedContract) (address common.Address, err error) {
+	address, err = contract.PreviousOwner(nil)
+	return
 }
