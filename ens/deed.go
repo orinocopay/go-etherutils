@@ -15,13 +15,8 @@
 package ens
 
 import (
-	"math/big"
-
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/deedcontract"
 	"github.com/orinocopay/go-etherutils/ens/registrarcontract"
 )
@@ -41,28 +36,6 @@ func DeedContractFor(client *ethclient.Client, registrar *registrarcontract.Regi
 	deedContract, err = DeedContract(client, &deedAddress)
 
 	return
-}
-
-// CreateDeedSession creates a session suitable for multiple calls
-func CreateDeedSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *deedcontract.DeedContract, gasLimit *big.Int, gasPrice *big.Int) *deedcontract.DeedContractSession {
-	// Create a signer
-	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
-
-	// Return our session
-	session := &deedcontract.DeedContractSession{
-		Contract: contract,
-		CallOpts: bind.CallOpts{
-			Pending: true,
-		},
-		TransactOpts: bind.TransactOpts{
-			From:     account.Address,
-			Signer:   signer,
-			GasPrice: gasPrice,
-			GasLimit: gasLimit,
-		},
-	}
-
-	return session
 }
 
 // Owner obtains the owner of a deed

@@ -16,7 +16,10 @@ package ens
 
 import (
 	"bytes"
+	"compress/zlib"
 	"errors"
+	"io"
+	"io/ioutil"
 	"math/big"
 	"strings"
 
@@ -116,7 +119,7 @@ func resolveHash(client *ethclient.Client, name string) (address common.Address,
 }
 
 // CreateResolverSession creates a session suitable for multiple calls
-func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *resolvercontract.ResolverContract, gasLimit *big.Int, gasPrice *big.Int) *resolvercontract.ResolverContractSession {
+func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *resolvercontract.ResolverContract, gasPrice *big.Int) *resolvercontract.ResolverContractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
@@ -130,7 +133,6 @@ func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *a
 			From:     account.Address,
 			Signer:   signer,
 			GasPrice: gasPrice,
-			GasLimit: gasLimit,
 		},
 	}
 
@@ -139,7 +141,60 @@ func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *a
 
 // SetResolution sets the address to which a name resolves
 func SetResolution(session *resolvercontract.ResolverContractSession, name string, resolutionAddress *common.Address) (tx *types.Transaction, err error) {
+	session.TransactOpts.GasPrice = big.NewInt(100000)
 	tx, err = session.SetAddr(NameHash(name), *resolutionAddress)
+	return
+}
+
+// SetAbi sets the ABI associated with a name
+func SetAbi(session *resolvercontract.ResolverContractSession, name string, abi string, contentType *big.Int) (tx *types.Transaction, err error) {
+	var data []byte
+	if contentType.Cmp(big.NewInt(1)) == 0 {
+		// Uncompressed JSON
+		data = []byte(abi)
+	} else if contentType.Cmp(big.NewInt(2)) == 0 {
+		// Zlib-compressed JSON
+		var b bytes.Buffer
+		w := zlib.NewWriter(&b)
+		w.Write([]byte(abi))
+		w.Close()
+		data = b.Bytes()
+	} else {
+		err = errors.New("Unsupported content type")
+	}
+	// Gas cost is around 50000 + 64 per byte; add 10000 headroom to be safe
+	session.TransactOpts.GasLimit = big.NewInt(int64(600000 + len(data)*64))
+	tx, err = session.SetABI(NameHash(name), contentType, data)
+
+	return
+}
+
+// Abi returns the ABI associated with a name
+func Abi(resolver *resolvercontract.ResolverContract, name string) (abi string, err error) {
+	var result struct {
+		ContentType *big.Int
+		Data        []byte
+	}
+	contentTypes := big.NewInt(3)
+	result, err = resolver.ABI(nil, NameHash(name), contentTypes)
+	if err == nil {
+		if result.ContentType.Cmp(big.NewInt(1)) == 0 {
+			// Uncompressed JSON
+			abi = string(result.Data)
+		} else if result.ContentType.Cmp(big.NewInt(2)) == 0 {
+			// Zlib-compressed JSON
+			b := bytes.NewReader(result.Data)
+			var z io.ReadCloser
+			z, err = zlib.NewReader(b)
+			if err != nil {
+				return
+			}
+			defer z.Close()
+			var uncompressed []byte
+			uncompressed, err = ioutil.ReadAll(z)
+			abi = string(uncompressed)
+		}
+	}
 	return
 }
 

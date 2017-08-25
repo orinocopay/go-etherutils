@@ -80,7 +80,7 @@ func ReverseResolver(client *ethclient.Client) (resolver *reverseresolvercontrac
 }
 
 // CreateReverseResolverSession creates a session suitable for multiple calls
-func CreateReverseResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *reverseresolvercontract.ReverseResolver, gasLimit *big.Int, gasPrice *big.Int) *reverseresolvercontract.ReverseResolverSession {
+func CreateReverseResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *reverseresolvercontract.ReverseResolver, gasPrice *big.Int) *reverseresolvercontract.ReverseResolverSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
@@ -94,7 +94,6 @@ func CreateReverseResolverSession(chainID *big.Int, wallet *accounts.Wallet, acc
 			From:     account.Address,
 			Signer:   signer,
 			GasPrice: gasPrice,
-			GasLimit: gasLimit,
 		},
 	}
 

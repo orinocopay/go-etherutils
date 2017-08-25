@@ -76,19 +76,20 @@ func Resolver(contract *registrycontract.RegistryContract, name string) (address
 
 // SetResolver sets the resolver for a name
 func SetResolver(session *registrycontract.RegistryContractSession, name string, resolverAddr *common.Address) (tx *types.Transaction, err error) {
-	// Set the resolver for this name
+	session.TransactOpts.GasLimit = big.NewInt(150000)
 	tx, err = session.SetResolver(NameHash(name), *resolverAddr)
 	return
 }
 
 // SetSubdomainOwner sets the owner for a subdomain of a name
 func SetSubdomainOwner(session *registrycontract.RegistryContractSession, name string, subdomain string, ownerAddr *common.Address) (tx *types.Transaction, err error) {
+	session.TransactOpts.GasLimit = big.NewInt(150000)
 	tx, err = session.SetSubnodeOwner(NameHash(name), LabelHash(subdomain), *ownerAddr)
 	return
 }
 
 // CreateRegistrySession creates a session suitable for multiple calls
-func CreateRegistrySession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrycontract.RegistryContract, gasLimit *big.Int, gasPrice *big.Int) *registrycontract.RegistryContractSession {
+func CreateRegistrySession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrycontract.RegistryContract, gasPrice *big.Int) *registrycontract.RegistryContractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
@@ -102,7 +103,6 @@ func CreateRegistrySession(chainID *big.Int, wallet *accounts.Wallet, account *a
 			From:     account.Address,
 			Signer:   signer,
 			GasPrice: gasPrice,
-			GasLimit: gasLimit,
 		},
 	}
 

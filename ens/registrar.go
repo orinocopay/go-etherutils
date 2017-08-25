@@ -60,7 +60,7 @@ func RegistrarContract(client *ethclient.Client) (registrar *registrarcontract.R
 }
 
 // CreateRegistrarSession creates a session suitable for multiple calls
-func CreateRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrarcontract.RegistrarContract, gasLimit *big.Int, gasPrice *big.Int) *registrarcontract.RegistrarContractSession {
+func CreateRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrarcontract.RegistrarContract, gasPrice *big.Int) *registrarcontract.RegistrarContractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
@@ -74,7 +74,6 @@ func CreateRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, account *
 			From:     account.Address,
 			Signer:   signer,
 			GasPrice: gasPrice,
-			GasLimit: gasLimit,
 		},
 	}
 
@@ -111,6 +110,7 @@ func StartAuction(session *registrarcontract.RegistrarContractSession, name stri
 		return
 	}
 
+	session.TransactOpts.GasLimit = big.NewInt(750000)
 	tx, err = session.StartAuction(LabelHash(domain))
 	return
 }
@@ -131,6 +131,8 @@ func StartAuctionAndBid(session *registrarcontract.RegistrarContractSession, nam
 	var domainHashes [][32]byte
 	domainHashes = make([][32]byte, 0, 1)
 	domainHashes = append(domainHashes, LabelHash(domain))
+
+	session.TransactOpts.GasLimit = big.NewInt(750000)
 	tx, err = session.StartAuctionsAndBid(domainHashes, sealedBid)
 	return
 }
@@ -142,6 +144,8 @@ func InvalidateName(session *registrarcontract.RegistrarContractSession, name st
 		err = errors.New("invalid name")
 		return
 	}
+
+	session.TransactOpts.GasLimit = big.NewInt(200000)
 	tx, err = session.InvalidateName(domain)
 	return
 }
@@ -153,6 +157,7 @@ func NewBid(session *registrarcontract.RegistrarContractSession, name string, ow
 		return
 	}
 
+	session.TransactOpts.GasLimit = big.NewInt(500000)
 	tx, err = session.NewBid(sealedBid)
 	return
 }
@@ -166,6 +171,8 @@ func RevealBid(session *registrarcontract.RegistrarContractSession, name string,
 	}
 	domainHash := LabelHash(domain)
 	saltHash := saltHash(salt)
+
+	session.TransactOpts.GasLimit = big.NewInt(500000)
 	tx, err = session.UnsealBid(domainHash, &amount, saltHash)
 	return
 }
@@ -177,6 +184,8 @@ func FinishAuction(session *registrarcontract.RegistrarContractSession, name str
 		err = errors.New("invalid name")
 		return
 	}
+
+	session.TransactOpts.GasLimit = big.NewInt(500000)
 	tx, err = session.FinalizeAuction(LabelHash(domain))
 	return
 }
@@ -187,6 +196,8 @@ func Transfer(session *registrarcontract.RegistrarContractSession, name string, 
 		err = errors.New("invalid name")
 		return
 	}
+
+	session.TransactOpts.GasLimit = big.NewInt(500000)
 	tx, err = session.Transfer(LabelHash(domain), to)
 	return
 }

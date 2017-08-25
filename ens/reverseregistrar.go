@@ -57,7 +57,7 @@ func ReverseRegistrar(client *ethclient.Client) (registrar *reverseregistrarcont
 }
 
 // CreateReverseRegistrarSession creates a session suitable for multiple calls
-func CreateReverseRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *reverseregistrarcontract.ReverseRegistrarContract, gasLimit *big.Int, gasPrice *big.Int) *reverseregistrarcontract.ReverseRegistrarContractSession {
+func CreateReverseRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *reverseregistrarcontract.ReverseRegistrarContract, gasPrice *big.Int) *reverseregistrarcontract.ReverseRegistrarContractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
@@ -71,7 +71,6 @@ func CreateReverseRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, ac
 			From:     account.Address,
 			Signer:   signer,
 			GasPrice: gasPrice,
-			GasLimit: gasLimit,
 		},
 	}
 
@@ -80,6 +79,7 @@ func CreateReverseRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, ac
 
 // SetName sets the name for the sending address
 func SetName(session *reverseregistrarcontract.ReverseRegistrarContractSession, name string) (tx *types.Transaction, err error) {
+	session.TransactOpts.GasLimit = big.NewInt(150000)
 	tx, err = session.SetName(name)
 	return
 }
