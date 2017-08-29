@@ -141,7 +141,7 @@ func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *a
 
 // SetResolution sets the address to which a name resolves
 func SetResolution(session *resolvercontract.ResolverContractSession, name string, resolutionAddress *common.Address) (tx *types.Transaction, err error) {
-	session.TransactOpts.GasPrice = big.NewInt(100000)
+	session.TransactOpts.GasPrice = big.NewInt(40000)
 	tx, err = session.SetAddr(NameHash(name), *resolutionAddress)
 	return
 }

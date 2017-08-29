@@ -197,7 +197,7 @@ func Transfer(session *registrarcontract.RegistrarContractSession, name string, 
 		return
 	}
 
-	session.TransactOpts.GasLimit = big.NewInt(500000)
+	session.TransactOpts.GasLimit = big.NewInt(75000)
 	tx, err = session.Transfer(LabelHash(domain), to)
 	return
 }

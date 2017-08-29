@@ -76,7 +76,7 @@ func Resolver(contract *registrycontract.RegistryContract, name string) (address
 
 // SetResolver sets the resolver for a name
 func SetResolver(session *registrycontract.RegistryContractSession, name string, resolverAddr *common.Address) (tx *types.Transaction, err error) {
-	session.TransactOpts.GasLimit = big.NewInt(150000)
+	session.TransactOpts.GasLimit = big.NewInt(55000)
 	tx, err = session.SetResolver(NameHash(name), *resolverAddr)
 	return
 }
