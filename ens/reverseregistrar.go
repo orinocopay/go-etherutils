@@ -17,6 +17,7 @@ package ens
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -28,8 +29,8 @@ import (
 	"github.com/orinocopay/go-etherutils/ens/reverseregistrarcontract"
 )
 
-// ReverseRegistrar obtains the reverse registrar contract for a chain
-func ReverseRegistrar(client *ethclient.Client) (registrar *reverseregistrarcontract.ReverseRegistrarContract, err error) {
+// ReverseRegistrarContract obtains the reverse registrar contract for a chain
+func ReverseRegistrarContract(client *ethclient.Client) (registrar *reverseregistrarcontract.ReverseRegistrarContract, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_, err = client.NetworkID(ctx)
@@ -51,6 +52,7 @@ func ReverseRegistrar(client *ethclient.Client) (registrar *reverseregistrarcont
 	if registrarAddress == UnknownAddress {
 		err = errors.New("no registrar for that network")
 	}
+	fmt.Println("Reverse registrar address is", registrarAddress.Hex())
 
 	registrar, err = reverseregistrarcontract.NewReverseRegistrarContract(registrarAddress, client)
 	return

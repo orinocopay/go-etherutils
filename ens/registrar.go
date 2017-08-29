@@ -31,8 +31,13 @@ import (
 	"github.com/orinocopay/go-etherutils/ens/registrycontract"
 )
 
-// RegistrarContract obtains the registrar contract for a chain
+// RegistrarContract obtains the registrar contract for '.eth'
 func RegistrarContract(client *ethclient.Client) (registrar *registrarcontract.RegistrarContract, err error) {
+	return RegistrarContractFor(client, "eth")
+}
+
+// RegistrarContract obtains the registrar contract for a named root
+func RegistrarContractFor(client *ethclient.Client, root string) (registrar *registrarcontract.RegistrarContract, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_, err = client.NetworkID(ctx)
@@ -47,7 +52,7 @@ func RegistrarContract(client *ethclient.Client) (registrar *registrarcontract.R
 	}
 
 	// Obtain the registrar address from the registry
-	registrarAddress, err := registry.Owner(nil, NameHash("eth"))
+	registrarAddress, err := registry.Owner(nil, NameHash(root))
 	if err != nil {
 		return
 	}
