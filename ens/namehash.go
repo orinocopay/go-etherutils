@@ -25,7 +25,8 @@ import (
 
 var p = idna.New(idna.MapForLookup(), idna.StrictDomainName(true), idna.Transitional(false))
 
-func normalize(input string) (output string) {
+// Normalize normalizes a name according to the ENS rules
+func Normalize(input string) (output string) {
 	output, err := p.ToUnicode(input)
 	if err != nil {
 		// TODO find out why ToUnicode() might fail and handle it here
@@ -43,7 +44,7 @@ func LabelHash(label string) (hash [32]byte) {
 	if label == "" {
 		return
 	}
-	normalizedLabel := normalize(label)
+	normalizedLabel := Normalize(label)
 
 	sha := sha3.NewKeccak256()
 	sha.Write([]byte(normalizedLabel))
@@ -57,7 +58,7 @@ func NameHash(name string) (hash [32]byte) {
 	if name == "" {
 		return
 	}
-	normalizedName := normalize(name)
+	normalizedName := Normalize(name)
 	parts := strings.Split(normalizedName, ".")
 	for i := len(parts) - 1; i >= 0; i-- {
 		hash = nameHashPart(hash, parts[i])
@@ -67,7 +68,7 @@ func NameHash(name string) (hash [32]byte) {
 
 // Domain returns the domain directly before the '.eth' in a name
 func Domain(name string) (domain string, err error) {
-	normalizedName := normalize(name)
+	normalizedName := Normalize(name)
 	nameBits := strings.Split(normalizedName, ".")
 	if len(nameBits) < 2 {
 		err = errors.New("invalid name")

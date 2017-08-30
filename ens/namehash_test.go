@@ -83,18 +83,18 @@ func TestNameHashNormalize1(t *testing.T) {
 
 func TestNormalizeFoo(t *testing.T) {
 	expected := "foo"
-	actual := normalize("FOO")
+	actual := Normalize("FOO")
 	assert.Equal(t, expected, actual, "Did not receive expected result")
 }
 
 func TestNormalizeCase(t *testing.T) {
 	expected := "foo"
-	actual := normalize("FOO")
+	actual := Normalize("FOO")
 	assert.Equal(t, expected, actual, "Did not receive expected result")
 }
 
 func TestNormalize2(t *testing.T) {
 	expected := ".eth"
-	actual := normalize(".eth")
+	actual := Normalize(".eth")
 	assert.Equal(t, expected, actual, "Did not receive expected result")
 }
