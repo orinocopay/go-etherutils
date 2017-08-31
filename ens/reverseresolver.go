@@ -23,7 +23,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/reverseregistrarcontract"
 	"github.com/orinocopay/go-etherutils/ens/reverseresolvercontract"
@@ -31,13 +30,10 @@ import (
 
 // ReverseResolve resolves an address in to an ENS name
 // This will return an error if the name is not found or otherwise 0
-func ReverseResolve(client *ethclient.Client, input *common.Address, rpcclient *rpc.Client) (name string, err error) {
-	nameHash, err := NameHash(input.Hex()[2:] + ".addr.reverse")
-	if err != nil {
-		return
-	}
+func ReverseResolve(client *ethclient.Client, input *common.Address) (name string, err error) {
+	nameHash := NameHash(input.Hex()[2:] + ".addr.reverse")
 
-	contract, err := ReverseResolver(client, rpcclient)
+	contract, err := ReverseResolver(client)
 	if err != nil {
 		return "", err
 	}
@@ -49,19 +45,14 @@ func ReverseResolve(client *ethclient.Client, input *common.Address, rpcclient *
 }
 
 // ReverseResolver obtains the reverse resolver contract
-func ReverseResolver(client *ethclient.Client, rpcclient *rpc.Client) (resolver *reverseresolvercontract.ReverseResolver, err error) {
-	nameHash, err := NameHash("addr.reverse")
-	if err != nil {
-		return
-	}
-
-	registryContract, err := RegistryContract(client, rpcclient)
+func ReverseResolver(client *ethclient.Client) (resolver *reverseresolvercontract.ReverseResolver, err error) {
+	registryContract, err := RegistryContract(client)
 	if err != nil {
 		return
 	}
 
 	// Obtain the reverse registrar address
-	reverseRegistrarAddress, err := registryContract.Owner(nil, nameHash)
+	reverseRegistrarAddress, err := registryContract.Owner(nil, NameHash("addr.reverse"))
 	if err != nil {
 		return
 	}
@@ -89,7 +80,7 @@ func ReverseResolver(client *ethclient.Client, rpcclient *rpc.Client) (resolver 
 }
 
 // CreateReverseResolverSession creates a session suitable for multiple calls
-func CreateReverseResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *reverseresolvercontract.ReverseResolver, gasLimit *big.Int, gasPrice *big.Int) *reverseresolvercontract.ReverseResolverSession {
+func CreateReverseResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *reverseresolvercontract.ReverseResolver, gasPrice *big.Int) *reverseresolvercontract.ReverseResolverSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
@@ -103,7 +94,6 @@ func CreateReverseResolverSession(chainID *big.Int, wallet *accounts.Wallet, acc
 			From:     account.Address,
 			Signer:   signer,
 			GasPrice: gasPrice,
-			GasLimit: gasLimit,
 		},
 	}
 

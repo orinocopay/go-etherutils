@@ -16,7 +16,10 @@ package ens
 
 import (
 	"bytes"
+	"compress/zlib"
 	"errors"
+	"io"
+	"io/ioutil"
 	"math/big"
 	"strings"
 
@@ -25,7 +28,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/resolvercontract"
 )
@@ -36,19 +38,16 @@ var zeroHash = make([]byte, 32)
 var UnknownAddress = common.HexToAddress("00")
 
 // PublicResolver obtains the public resolver for a chain
-func PublicResolver(client *ethclient.Client, rpcclient *rpc.Client) (address common.Address, err error) {
-	address, err = resolverAddress(client, "resolver.eth", rpcclient)
+func PublicResolver(client *ethclient.Client) (address common.Address, err error) {
+	address, err = resolverAddress(client, "resolver.eth")
 
 	return
 }
 
-func resolverAddress(client *ethclient.Client, name string, rpcclient *rpc.Client) (address common.Address, err error) {
-	nameHash, err := NameHash(name)
-	if err != nil {
-		return
-	}
+func resolverAddress(client *ethclient.Client, name string) (address common.Address, err error) {
+	nameHash := NameHash(name)
 
-	registryContract, err := RegistryContract(client, rpcclient)
+	registryContract, err := RegistryContract(client)
 	if err != nil {
 		return
 	}
@@ -78,9 +77,9 @@ func resolverAddress(client *ethclient.Client, name string, rpcclient *rpc.Clien
 
 // Resolve resolves an ENS name in to an Etheruem address
 // This will return an error if the name is not found or otherwise 0
-func Resolve(client *ethclient.Client, input string, rpcclient *rpc.Client) (address common.Address, err error) {
+func Resolve(client *ethclient.Client, input string) (address common.Address, err error) {
 	if strings.HasSuffix(input, ".eth") {
-		return resolveName(client, input, rpcclient)
+		return resolveName(client, input)
 	}
 	address = common.HexToAddress(input)
 	if address == UnknownAddress {
@@ -90,32 +89,25 @@ func Resolve(client *ethclient.Client, input string, rpcclient *rpc.Client) (add
 	return
 }
 
-func resolveName(client *ethclient.Client, input string, rpcclient *rpc.Client) (address common.Address, err error) {
+func resolveName(client *ethclient.Client, input string) (address common.Address, err error) {
 	var nameHash [32]byte
-	nameHash, err = NameHash(input)
-	if err != nil {
-		return
-	}
+	nameHash = NameHash(input)
 	if bytes.Compare(nameHash[:], zeroHash) == 0 {
 		err = errors.New("Bad name")
 	} else {
-		address, err = resolveHash(client, input, rpcclient)
+		address, err = resolveHash(client, input)
 	}
 	return
 }
 
-func resolveHash(client *ethclient.Client, name string, rpcclient *rpc.Client) (address common.Address, err error) {
-	contract, err := ResolverContract(client, name, rpcclient)
+func resolveHash(client *ethclient.Client, name string) (address common.Address, err error) {
+	contract, err := ResolverContract(client, name)
 	if err != nil {
 		return UnknownAddress, err
 	}
 
 	// Resolve the name
-	nameHash, err := NameHash(name)
-	if err != nil {
-		return
-	}
-	address, err = contract.Addr(nil, nameHash)
+	address, err = contract.Addr(nil, NameHash(name))
 	if err != nil {
 		return UnknownAddress, err
 	}
@@ -127,7 +119,7 @@ func resolveHash(client *ethclient.Client, name string, rpcclient *rpc.Client) (
 }
 
 // CreateResolverSession creates a session suitable for multiple calls
-func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *resolvercontract.ResolverContract, gasLimit *big.Int, gasPrice *big.Int) *resolvercontract.ResolverContractSession {
+func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *resolvercontract.ResolverContract, gasPrice *big.Int) *resolvercontract.ResolverContractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
@@ -141,7 +133,6 @@ func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *a
 			From:     account.Address,
 			Signer:   signer,
 			GasPrice: gasPrice,
-			GasLimit: gasLimit,
 		},
 	}
 
@@ -150,11 +141,60 @@ func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *a
 
 // SetResolution sets the address to which a name resolves
 func SetResolution(session *resolvercontract.ResolverContractSession, name string, resolutionAddress *common.Address) (tx *types.Transaction, err error) {
-	nameHash, err := NameHash(name)
-	if err != nil {
-		return
+	session.TransactOpts.GasPrice = big.NewInt(40000)
+	tx, err = session.SetAddr(NameHash(name), *resolutionAddress)
+	return
+}
+
+// SetAbi sets the ABI associated with a name
+func SetAbi(session *resolvercontract.ResolverContractSession, name string, abi string, contentType *big.Int) (tx *types.Transaction, err error) {
+	var data []byte
+	if contentType.Cmp(big.NewInt(1)) == 0 {
+		// Uncompressed JSON
+		data = []byte(abi)
+	} else if contentType.Cmp(big.NewInt(2)) == 0 {
+		// Zlib-compressed JSON
+		var b bytes.Buffer
+		w := zlib.NewWriter(&b)
+		w.Write([]byte(abi))
+		w.Close()
+		data = b.Bytes()
+	} else {
+		err = errors.New("Unsupported content type")
 	}
-	tx, err = session.SetAddr(nameHash, *resolutionAddress)
+	// Gas cost is around 50000 + 64 per byte; add 10000 headroom to be safe
+	session.TransactOpts.GasLimit = big.NewInt(int64(600000 + len(data)*64))
+	tx, err = session.SetABI(NameHash(name), contentType, data)
+
+	return
+}
+
+// Abi returns the ABI associated with a name
+func Abi(resolver *resolvercontract.ResolverContract, name string) (abi string, err error) {
+	var result struct {
+		ContentType *big.Int
+		Data        []byte
+	}
+	contentTypes := big.NewInt(3)
+	result, err = resolver.ABI(nil, NameHash(name), contentTypes)
+	if err == nil {
+		if result.ContentType.Cmp(big.NewInt(1)) == 0 {
+			// Uncompressed JSON
+			abi = string(result.Data)
+		} else if result.ContentType.Cmp(big.NewInt(2)) == 0 {
+			// Zlib-compressed JSON
+			b := bytes.NewReader(result.Data)
+			var z io.ReadCloser
+			z, err = zlib.NewReader(b)
+			if err != nil {
+				return
+			}
+			defer z.Close()
+			var uncompressed []byte
+			uncompressed, err = ioutil.ReadAll(z)
+			abi = string(uncompressed)
+		}
+	}
 	return
 }
 
@@ -167,8 +207,8 @@ func ResolverContractByAddress(client *ethclient.Client, resolverAddress common.
 }
 
 // ResolverContract obtains the resolver contract for a name
-func ResolverContract(client *ethclient.Client, name string, rpcclient *rpc.Client) (resolver *resolvercontract.ResolverContract, err error) {
-	resolverAddress, err := resolverAddress(client, name, rpcclient)
+func ResolverContract(client *ethclient.Client, name string) (resolver *resolvercontract.ResolverContract, err error) {
+	resolverAddress, err := resolverAddress(client, name)
 	if err != nil {
 		return
 	}

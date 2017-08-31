@@ -15,14 +15,10 @@
 package ens
 
 import (
-	"math/big"
-
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/deedcontract"
+	"github.com/orinocopay/go-etherutils/ens/registrarcontract"
 )
 
 // DeedContract obtains the deed contract at a particular address
@@ -31,24 +27,25 @@ func DeedContract(client *ethclient.Client, address *common.Address) (deed *deed
 	return
 }
 
-// CreateDeedSession creates a session suitable for multiple calls
-func CreateDeedSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *deedcontract.DeedContract, gasLimit *big.Int, gasPrice *big.Int) *deedcontract.DeedContractSession {
-	// Create a signer
-	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
-
-	// Return our session
-	session := &deedcontract.DeedContractSession{
-		Contract: contract,
-		CallOpts: bind.CallOpts{
-			Pending: true,
-		},
-		TransactOpts: bind.TransactOpts{
-			From:     account.Address,
-			Signer:   signer,
-			GasPrice: gasPrice,
-			GasLimit: gasLimit,
-		},
+// DeedContract obtains the deed contract for a particular name
+func DeedContractFor(client *ethclient.Client, registrar *registrarcontract.RegistrarContract, name string) (deedContract *deedcontract.DeedContract, err error) {
+	_, deedAddress, _, _, _, err := Entry(registrar, client, name)
+	if err != nil {
+		return
 	}
+	deedContract, err = DeedContract(client, &deedAddress)
 
-	return session
+	return
+}
+
+// Owner obtains the owner of a deed
+func Owner(contract *deedcontract.DeedContract) (address common.Address, err error) {
+	address, err = contract.Owner(nil)
+	return
+}
+
+// PreviousOwner obtains the previous owner of a deed
+func PreviousOwner(contract *deedcontract.DeedContract) (address common.Address, err error) {
+	address, err = contract.PreviousOwner(nil)
+	return
 }

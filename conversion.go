@@ -81,25 +81,28 @@ var million = big.NewInt(1000000)
 // If the 'standard' argument is true then this will display the value
 // in either (KMG)Wei or Ether only
 func WeiToString(input *big.Int, standard bool) string {
+	// Take a copy of the input so that we can mutate it
+	value := new(big.Int).Set(input)
+
 	// Input sanity checks
-	if input.Cmp(zero) == 0 {
+	if value.Cmp(zero) == 0 {
 		return "0"
 	}
 
 	postfixPos := 0
-	modInt := new(big.Int).Set(input)
+	modInt := new(big.Int).Set(value)
 	// Step 1: step down whole thousands for our first attempt at the unit
-	for input.Cmp(thousand) >= 0 && modInt.Mod(input, thousand).Cmp(zero) == 0 {
+	for value.Cmp(thousand) >= 0 && modInt.Mod(value, thousand).Cmp(zero) == 0 {
 		postfixPos++
-		input = input.Div(input, thousand)
-		modInt = modInt.Set(input)
+		value = value.Div(value, thousand)
+		modInt = modInt.Set(value)
 	}
 
 	// Step 2: move to a fraction if sensible
 
 	// Because of the innacuracy of floating point we use string manipulation
 	// to place the decimal in the correct position
-	outputValue := input.Text(10)
+	outputValue := value.Text(10)
 
 	desiredPostfixPos := postfixPos
 	if len(outputValue) > 3 {

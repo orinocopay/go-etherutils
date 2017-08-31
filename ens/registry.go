@@ -27,17 +27,16 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/registrarcontract"
 	"github.com/orinocopay/go-etherutils/ens/registrycontract"
 )
 
 // RegistryContract obtains the registry contract for a chain
-func RegistryContract(client *ethclient.Client, rpcclient *rpc.Client) (registry *registrycontract.RegistryContract, err error) {
+func RegistryContract(client *ethclient.Client) (registry *registrycontract.RegistryContract, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	chainID, err := etherutils.NetworkID(ctx, rpcclient)
+	chainID, err := client.NetworkID(ctx)
 	if err != nil {
 		return
 	}
@@ -68,11 +67,7 @@ func RegistryContractFromRegistrar(client *ethclient.Client, registrar *registra
 
 // Resolver obtains the address of the resolver for a .eth name
 func Resolver(contract *registrycontract.RegistryContract, name string) (address common.Address, err error) {
-	nameHash, err := NameHash(name)
-	if err != nil {
-		return
-	}
-	address, err = contract.Resolver(nil, nameHash)
+	address, err = contract.Resolver(nil, NameHash(name))
 	if err == nil && bytes.Compare(address.Bytes(), UnknownAddress.Bytes()) == 0 {
 		err = errors.New("no resolver")
 	}
@@ -81,31 +76,20 @@ func Resolver(contract *registrycontract.RegistryContract, name string) (address
 
 // SetResolver sets the resolver for a name
 func SetResolver(session *registrycontract.RegistryContractSession, name string, resolverAddr *common.Address) (tx *types.Transaction, err error) {
-	// Set the resolver for this name
-	nameHash, err := NameHash(name)
-	if err != nil {
-		return
-	}
-	tx, err = session.SetResolver(nameHash, *resolverAddr)
+	session.TransactOpts.GasLimit = big.NewInt(55000)
+	tx, err = session.SetResolver(NameHash(name), *resolverAddr)
 	return
 }
 
 // SetSubdomainOwner sets the owner for a subdomain of a name
 func SetSubdomainOwner(session *registrycontract.RegistryContractSession, name string, subdomain string, ownerAddr *common.Address) (tx *types.Transaction, err error) {
-	nameHash, err := NameHash(name)
-	if err != nil {
-		return
-	}
-	subdomainHash, err := LabelHash(subdomain)
-	if err != nil {
-		return
-	}
-	tx, err = session.SetSubnodeOwner(nameHash, subdomainHash, *ownerAddr)
+	session.TransactOpts.GasLimit = big.NewInt(150000)
+	tx, err = session.SetSubnodeOwner(NameHash(name), LabelHash(subdomain), *ownerAddr)
 	return
 }
 
 // CreateRegistrySession creates a session suitable for multiple calls
-func CreateRegistrySession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrycontract.RegistryContract, gasLimit *big.Int, gasPrice *big.Int) *registrycontract.RegistryContractSession {
+func CreateRegistrySession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *registrycontract.RegistryContract, gasPrice *big.Int) *registrycontract.RegistryContractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
@@ -119,7 +103,6 @@ func CreateRegistrySession(chainID *big.Int, wallet *accounts.Wallet, account *a
 			From:     account.Address,
 			Signer:   signer,
 			GasPrice: gasPrice,
-			GasLimit: gasLimit,
 		},
 	}
 

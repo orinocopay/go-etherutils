@@ -17,6 +17,7 @@ package ens
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -24,42 +25,41 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	etherutils "github.com/orinocopay/go-etherutils"
 	"github.com/orinocopay/go-etherutils/ens/reverseregistrarcontract"
 )
 
-// ReverseRegistrar obtains the reverse registrar contract for a chain
-func ReverseRegistrar(client *ethclient.Client, rpcclient *rpc.Client) (registrar *reverseregistrarcontract.ReverseRegistrarContract, err error) {
+// ReverseRegistrarContract obtains the reverse registrar contract for a chain
+func ReverseRegistrarContract(client *ethclient.Client) (registrar *reverseregistrarcontract.ReverseRegistrarContract, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err = etherutils.NetworkID(ctx, rpcclient)
+	_, err = client.NetworkID(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// Obtain a registry contract
-	registry, err := RegistryContract(client, rpcclient)
+	registry, err := RegistryContract(client)
 	if err != nil {
 		return
 	}
 
 	// Obtain the registry address from the registrar
-	nameHash, err := NameHash("addr.reverse")
-	registrarAddress, err := registry.Owner(nil, nameHash)
+	registrarAddress, err := registry.Owner(nil, NameHash("addr.reverse"))
 	if err != nil {
 		return
 	}
 	if registrarAddress == UnknownAddress {
 		err = errors.New("no registrar for that network")
 	}
+	fmt.Println("Reverse registrar address is", registrarAddress.Hex())
 
 	registrar, err = reverseregistrarcontract.NewReverseRegistrarContract(registrarAddress, client)
 	return
 }
 
 // CreateReverseRegistrarSession creates a session suitable for multiple calls
-func CreateReverseRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *reverseregistrarcontract.ReverseRegistrarContract, gasLimit *big.Int, gasPrice *big.Int) *reverseregistrarcontract.ReverseRegistrarContractSession {
+func CreateReverseRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string, contract *reverseregistrarcontract.ReverseRegistrarContract, gasPrice *big.Int) *reverseregistrarcontract.ReverseRegistrarContractSession {
 	// Create a signer
 	signer := etherutils.AccountSigner(chainID, wallet, account, passphrase)
 
@@ -73,7 +73,6 @@ func CreateReverseRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, ac
 			From:     account.Address,
 			Signer:   signer,
 			GasPrice: gasPrice,
-			GasLimit: gasLimit,
 		},
 	}
 
@@ -82,6 +81,7 @@ func CreateReverseRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, ac
 
 // SetName sets the name for the sending address
 func SetName(session *reverseregistrarcontract.ReverseRegistrarContractSession, name string) (tx *types.Transaction, err error) {
+	session.TransactOpts.GasLimit = big.NewInt(150000)
 	tx, err = session.SetName(name)
 	return
 }
