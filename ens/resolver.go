@@ -141,7 +141,6 @@ func CreateResolverSession(chainID *big.Int, wallet *accounts.Wallet, account *a
 
 // SetResolution sets the address to which a name resolves
 func SetResolution(session *resolvercontract.ResolverContractSession, name string, resolutionAddress *common.Address) (tx *types.Transaction, err error) {
-	session.TransactOpts.GasPrice = big.NewInt(40000)
 	tx, err = session.SetAddr(NameHash(name), *resolutionAddress)
 	return
 }
@@ -163,7 +162,7 @@ func SetAbi(session *resolvercontract.ResolverContractSession, name string, abi 
 		err = errors.New("Unsupported content type")
 	}
 	// Gas cost is around 50000 + 64 per byte; add 10000 headroom to be safe
-	session.TransactOpts.GasLimit = big.NewInt(int64(600000 + len(data)*64))
+	//session.TransactOpts.GasLimit = big.NewInt(int64(600000 + len(data)*64))
 	tx, err = session.SetABI(NameHash(name), contentType, data)
 
 	return
