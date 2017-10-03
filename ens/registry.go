@@ -76,14 +76,12 @@ func Resolver(contract *registrycontract.RegistryContract, name string) (address
 
 // SetResolver sets the resolver for a name
 func SetResolver(session *registrycontract.RegistryContractSession, name string, resolverAddr *common.Address) (tx *types.Transaction, err error) {
-	session.TransactOpts.GasLimit = big.NewInt(55000)
 	tx, err = session.SetResolver(NameHash(name), *resolverAddr)
 	return
 }
 
 // SetSubdomainOwner sets the owner for a subdomain of a name
 func SetSubdomainOwner(session *registrycontract.RegistryContractSession, name string, subdomain string, ownerAddr *common.Address) (tx *types.Transaction, err error) {
-	session.TransactOpts.GasLimit = big.NewInt(150000)
 	tx, err = session.SetSubnodeOwner(NameHash(name), LabelHash(subdomain), *ownerAddr)
 	return
 }

@@ -18,8 +18,10 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"math/rand"
 	"time"
 
+	"github.com/dchest/uniuri"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -115,13 +117,12 @@ func StartAuction(session *registrarcontract.RegistrarContractSession, name stri
 		return
 	}
 
-	session.TransactOpts.GasLimit = big.NewInt(750000)
 	tx, err = session.StartAuction(LabelHash(domain))
 	return
 }
 
 // StartAuctionAndBid starts an auction and bids in the same transaction.
-func StartAuctionAndBid(session *registrarcontract.RegistrarContractSession, name string, owner *common.Address, amount big.Int, salt string) (tx *types.Transaction, err error) {
+func StartAuctionAndBid(session *registrarcontract.RegistrarContractSession, name string, owner *common.Address, amount big.Int, salt string, dummies int) (tx *types.Transaction, err error) {
 	domain, err := Domain(name)
 	if err != nil {
 		err = errors.New("invalid name")
@@ -134,10 +135,19 @@ func StartAuctionAndBid(session *registrarcontract.RegistrarContractSession, nam
 	}
 
 	var domainHashes [][32]byte
-	domainHashes = make([][32]byte, 0, 1)
-	domainHashes = append(domainHashes, LabelHash(domain))
+	domainHashes = make([][32]byte, 0, dummies+1)
+	rand.Seed(time.Now().UnixNano())
+	namePlace := rand.Intn(dummies + 1)
+	for i := 0; i < dummies+1; i++ {
+		var thisDomain string
+		if i == namePlace {
+			thisDomain = domain
+		} else {
+			thisDomain = uniuri.New()
+		}
+		domainHashes = append(domainHashes, LabelHash(thisDomain))
+	}
 
-	session.TransactOpts.GasLimit = big.NewInt(750000)
 	tx, err = session.StartAuctionsAndBid(domainHashes, sealedBid)
 	return
 }
@@ -150,7 +160,6 @@ func InvalidateName(session *registrarcontract.RegistrarContractSession, name st
 		return
 	}
 
-	session.TransactOpts.GasLimit = big.NewInt(200000)
 	tx, err = session.InvalidateName(domain)
 	return
 }
@@ -162,7 +171,6 @@ func NewBid(session *registrarcontract.RegistrarContractSession, name string, ow
 		return
 	}
 
-	session.TransactOpts.GasLimit = big.NewInt(500000)
 	tx, err = session.NewBid(sealedBid)
 	return
 }
@@ -177,7 +185,7 @@ func RevealBid(session *registrarcontract.RegistrarContractSession, name string,
 	domainHash := LabelHash(domain)
 	saltHash := saltHash(salt)
 
-	session.TransactOpts.GasLimit = big.NewInt(500000)
+	session.TransactOpts.GasLimit = big.NewInt(200000)
 	tx, err = session.UnsealBid(domainHash, &amount, saltHash)
 	return
 }
@@ -190,7 +198,6 @@ func FinishAuction(session *registrarcontract.RegistrarContractSession, name str
 		return
 	}
 
-	session.TransactOpts.GasLimit = big.NewInt(500000)
 	tx, err = session.FinalizeAuction(LabelHash(domain))
 	return
 }
@@ -202,7 +209,6 @@ func Transfer(session *registrarcontract.RegistrarContractSession, name string, 
 		return
 	}
 
-	session.TransactOpts.GasLimit = big.NewInt(75000)
 	tx, err = session.Transfer(LabelHash(domain), to)
 	return
 }

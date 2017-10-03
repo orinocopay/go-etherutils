@@ -65,8 +65,7 @@ func TestNameHashSubdomain(t *testing.T) {
 
 func TestLabelHashEth(t *testing.T) {
 	expected := "4f5b812789fc606be1b3b16908db13fc7a9adf7ca72641f84d75b47069d3d7f0"
-	actual, err := LabelHash("icotrust")
-	assert.Nil(t, err, "Failed to hash")
+	actual := LabelHash("eth")
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 

@@ -41,6 +41,10 @@ func ReverseResolve(client *ethclient.Client, input *common.Address) (name strin
 	// Resolve the name
 	name, err = contract.Name(nil, nameHash)
 
+	if name == "" {
+		err = errors.New("No resolution")
+	}
+
 	return
 }
 

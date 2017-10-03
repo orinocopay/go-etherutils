@@ -17,7 +17,6 @@ package ens
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -52,7 +51,6 @@ func ReverseRegistrarContract(client *ethclient.Client) (registrar *reverseregis
 	if registrarAddress == UnknownAddress {
 		err = errors.New("no registrar for that network")
 	}
-	fmt.Println("Reverse registrar address is", registrarAddress.Hex())
 
 	registrar, err = reverseregistrarcontract.NewReverseRegistrarContract(registrarAddress, client)
 	return
@@ -81,7 +79,6 @@ func CreateReverseRegistrarSession(chainID *big.Int, wallet *accounts.Wallet, ac
 
 // SetName sets the name for the sending address
 func SetName(session *reverseregistrarcontract.ReverseRegistrarContractSession, name string) (tx *types.Transaction, err error) {
-	session.TransactOpts.GasLimit = big.NewInt(150000)
 	tx, err = session.SetName(name)
 	return
 }
