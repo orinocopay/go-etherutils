@@ -71,8 +71,27 @@ func TestResolveNickJohnson(t *testing.T) {
 	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
 }
 
+func TestResolveAddress(t *testing.T) {
+	expected := "5ffc014343cd971b7eb70732021e26c35b744cc4"
+	actual, err := Resolve(client, "0x5ffc014343cd971b7eb70732021e26c35b744cc4")
+	assert.Nil(t, err, "Error resolving address")
+	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
+}
+
+func TestResolveShortAddress(t *testing.T) {
+	expected := "0000000000000000000000000000000000000001"
+	actual, err := Resolve(client, "0x1")
+	assert.Nil(t, err, "Error resolving address")
+	assert.Equal(t, expected, hex.EncodeToString(actual[:]), "Did not receive expected result")
+}
+
+func TestResolveHexString(t *testing.T) {
+	_, err := Resolve(client, "0xe32c6d1a964749b6de2130e20daed821a45b9e7261118801ff5319d0ffc6b54a")
+	assert.NotNil(t, err, "Resolved too-long hex string")
+}
+
 func TestReverseResolveTestEnsTest(t *testing.T) {
-	expected := "test.enstest.eth"
+	expected := "domainsale"
 	address := common.HexToAddress("0x388ea662ef2c223ec0b047d41bf3c0f362142ad5")
 	actual, err := ReverseResolve(client, &address)
 	assert.Nil(t, err, "Error resolving address")

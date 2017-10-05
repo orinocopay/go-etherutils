@@ -81,9 +81,13 @@ func Resolve(client *ethclient.Client, input string) (address common.Address, er
 	if strings.HasSuffix(input, ".eth") {
 		return resolveName(client, input)
 	}
-	address = common.HexToAddress(input)
-	if address == UnknownAddress {
-		err = errors.New("could not parse address")
+	if (strings.HasPrefix(input, "0x") && len(input) > 42) || (!strings.HasPrefix(input, "0x") && len(input) > 40) {
+		err = errors.New("address too long")
+	} else {
+		address = common.HexToAddress(input)
+		if address == UnknownAddress {
+			err = errors.New("could not parse address")
+		}
 	}
 
 	return
