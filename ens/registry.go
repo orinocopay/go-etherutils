@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -32,8 +33,7 @@ import (
 	"github.com/orinocopay/go-etherutils/ens/registrycontract"
 )
 
-// RegistryContract obtains the registry contract for a chain
-func RegistryContract(client *ethclient.Client) (registry *registrycontract.RegistryContract, err error) {
+func RegistryContractAddress(client *ethclient.Client) (address common.Address, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	chainID, err := client.NetworkID(ctx)
@@ -43,14 +43,28 @@ func RegistryContract(client *ethclient.Client) (registry *registrycontract.Regi
 
 	// Instantiate the registry contract
 	if chainID.Cmp(params.MainnetChainConfig.ChainId) == 0 {
-		registry, err = registrycontract.NewRegistryContract(common.HexToAddress("314159265dd8dbb310642f98f50c066173c1259b"), client)
+		address = common.HexToAddress("314159265dd8dbb310642f98f50c066173c1259b")
 	} else if chainID.Cmp(params.TestnetChainConfig.ChainId) == 0 {
-		registry, err = registrycontract.NewRegistryContract(common.HexToAddress("112234455c3a32fd11230c42e7bccd4a84e02010"), client)
+		address = common.HexToAddress("112234455c3a32fd11230c42e7bccd4a84e02010")
 	} else if chainID.Cmp(params.RinkebyChainConfig.ChainId) == 0 {
-		registry, err = registrycontract.NewRegistryContract(common.HexToAddress("e7410170f87102DF0055eB195163A03B7F2Bff4A"), client)
+		address = common.HexToAddress("e7410170f87102DF0055eB195163A03B7F2Bff4A")
 	} else {
-		err = errors.New("Unknown network ID")
+		err = fmt.Errorf("No contract for network ID %v", chainID)
 	}
+	return
+}
+
+// RegistryContract obtains the registry contract for a chain
+func RegistryContract(client *ethclient.Client) (registry *registrycontract.RegistryContract, err error) {
+	var address common.Address
+	address, err = RegistryContractAddress(client)
+	if err != nil {
+		return
+	}
+
+	// Instantiate the registry contract
+	registry, err = registrycontract.NewRegistryContract(address, client)
+
 	return
 }
 

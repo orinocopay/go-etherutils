@@ -15,7 +15,6 @@
 package ens
 
 import (
-	"context"
 	"errors"
 	"math/big"
 	"math/rand"
@@ -33,20 +32,11 @@ import (
 	"github.com/orinocopay/go-etherutils/ens/registrycontract"
 )
 
-// RegistrarContract obtains the registrar contract for '.eth'
-func RegistrarContract(client *ethclient.Client) (registrar *registrarcontract.RegistrarContract, err error) {
-	return RegistrarContractFor(client, "eth")
+func RegistrarContractAddress(client *ethclient.Client) (address common.Address, err error) {
+	return RegistrarContractAddressFor(client, "eth")
 }
 
-// RegistrarContract obtains the registrar contract for a named root
-func RegistrarContractFor(client *ethclient.Client, root string) (registrar *registrarcontract.RegistrarContract, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	_, err = client.NetworkID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func RegistrarContractAddressFor(client *ethclient.Client, root string) (address common.Address, err error) {
 	// Obtain a registry contract
 	registry, err := RegistryContract(client)
 	if err != nil {
@@ -54,15 +44,31 @@ func RegistrarContractFor(client *ethclient.Client, root string) (registrar *reg
 	}
 
 	// Obtain the registrar address from the registry
-	registrarAddress, err := registry.Owner(nil, NameHash(root))
+	address, err = registry.Owner(nil, NameHash(root))
 	if err != nil {
 		return
 	}
-	if registrarAddress == UnknownAddress {
+	if address == UnknownAddress {
 		err = errors.New("no registrar for that network")
 	}
 
-	registrar, err = registrarcontract.NewRegistrarContract(registrarAddress, client)
+	return
+}
+
+// RegistrarContract obtains the registrar contract for '.eth'
+func RegistrarContract(client *ethclient.Client) (registrar *registrarcontract.RegistrarContract, err error) {
+	return RegistrarContractFor(client, "eth")
+}
+
+// RegistrarContract obtains the registrar contract for a named root
+func RegistrarContractFor(client *ethclient.Client, root string) (registrar *registrarcontract.RegistrarContract, err error) {
+	var address common.Address
+	address, err = RegistrarContractAddressFor(client, root)
+	if err != nil {
+		return
+	}
+
+	registrar, err = registrarcontract.NewRegistrarContract(address, client)
 	return
 }
 
