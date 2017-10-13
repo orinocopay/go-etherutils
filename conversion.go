@@ -170,7 +170,7 @@ func decimalStringToWei(amount string, unit string, result *big.Int) error {
 		return nil
 	}
 	var decVal big.Int
-	decVal.SetString(trimmedDecimal, 0)
+	decVal.SetString(trimmedDecimal, 10)
 
 	// Divide multiplier by 10^len(trimmed decimal) to obtain sane value
 	div := big.NewInt(10)

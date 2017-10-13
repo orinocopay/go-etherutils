@@ -36,6 +36,13 @@ func TestStringToWeiWithLargeValue(t *testing.T) {
 	assert.Equal(t, expected, result, "Did not receive expected result")
 }
 
+func TestStringToWeiProb1(t *testing.T) {
+	expected, _ := new(big.Int).SetString("24000000000000000", 10)
+	result, err := StringToWei("0.024ether")
+	assert.Nil(t, err, "Failed to convert normal string to Wei")
+	assert.Equal(t, expected, result, "Did not receive expected result")
+}
+
 func TestStringToWeiWithWeiUnit(t *testing.T) {
 	expected, _ := new(big.Int).SetString("1000000000000000000000", 10)
 	result, err := StringToWei("1000000000000000000000 Wei")
