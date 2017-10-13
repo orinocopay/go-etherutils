@@ -16,18 +16,35 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"path/filepath"
+	"runtime"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/params"
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 // ObtainWallet fetches the wallet for a given address
 func ObtainWallet(chainID *big.Int, address common.Address) (accounts.Wallet, error) {
+	wallet, err := obtainGethWallet(chainID, address)
+	if err == nil {
+		return wallet, nil
+	}
+
+	wallet, err = obtainParityWallet(chainID, address)
+	if err == nil {
+		return wallet, err
+	}
+
+	return wallet, fmt.Errorf("Failed to obtain wallet")
+}
+
+func obtainGethWallet(chainID *big.Int, address common.Address) (accounts.Wallet, error) {
 	keydir := node.DefaultDataDir()
 	if chainID.Cmp(params.MainnetChainConfig.ChainId) == 0 {
 		// Nothing to add for mainnet
@@ -42,11 +59,36 @@ func ObtainWallet(chainID *big.Int, address common.Address) (accounts.Wallet, er
 	defer accountManager.Close()
 	account := accounts.Account{Address: address}
 	wallet, err := accountManager.Find(account)
+	return wallet, err
+}
+
+func obtainParityWallet(chainID *big.Int, address common.Address) (accounts.Wallet, error) {
+	keydir, err := homedir.Dir()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to find home directory")
+	}
+	if runtime.GOOS == "windows" {
+		keydir = filepath.Join(keydir, "AppData\\Roaming\\Parity\\Ethereum\\keys")
+	} else if runtime.GOOS == "darwin" {
+		keydir = filepath.Join(keydir, "Library/Application Support/io.parity.ethereum/keys")
+	} else if runtime.GOOS == "linux" {
+		keydir = filepath.Join(keydir, ".local/share/io.parity.ethereum/keys")
+	} else {
+		return nil, fmt.Errorf("Unsupported operating system")
 	}
 
-	return wallet, nil
+	if chainID.Cmp(params.MainnetChainConfig.ChainId) == 0 {
+		keydir = filepath.Join(keydir, "ethereum")
+	} else if chainID.Cmp(params.TestnetChainConfig.ChainId) == 0 {
+		keydir = filepath.Join(keydir, "test")
+	}
+
+	backends := []accounts.Backend{keystore.NewKeyStore(keydir, keystore.StandardScryptN, keystore.StandardScryptP)}
+	accountManager := accounts.NewManager(backends...)
+	defer accountManager.Close()
+	account := accounts.Account{Address: address}
+	wallet, err := accountManager.Find(account)
+	return wallet, err
 }
 
 // ObtainAccount fetches the account for a given address
