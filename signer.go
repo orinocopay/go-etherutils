@@ -15,6 +15,7 @@
 package etherutils
 
 import (
+	"crypto/ecdsa"
 	"errors"
 	"math/big"
 
@@ -22,23 +23,26 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // KeySigner generates a signer using a private key
-//func KeySigner() (signerfn bind.SignerFn) {
-//	signerfn = func(signer types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-//		if address != keyAddr {
-//			return nil, errors.New("not authorized to sign this account")
-//		}
-//		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), key)
-//		if err != nil {
-//			return nil, err
-//		}
-//		return tx.WithSignature(signer, signature)
-//	}
-//
-//	return
-//}
+func KeySigner(chainID *big.Int, key *ecdsa.PrivateKey) (signerfn bind.SignerFn) {
+	signerfn = func(signer types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
+		keyAddr := crypto.PubkeyToAddress(key.PublicKey)
+		if address != keyAddr {
+			return nil, errors.New("not authorized to sign this account")
+		}
+		return types.SignTx(tx, types.NewEIP155Signer(chainID), key)
+		// signature, err := crypto.Sign(signer.Hash(tx).Bytes(), key)
+		// if err != nil {
+		// return nil, err
+		// }
+		// return tx.WithSignature(signer, signature)
+	}
+
+	return
+}
 
 // AccountSigner generates a signer using an account
 func AccountSigner(chainID *big.Int, wallet *accounts.Wallet, account *accounts.Account, passphrase string) (signerfn bind.SignerFn) {
